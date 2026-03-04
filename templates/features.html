@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Features - Steel Waste Prediction System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <div class="section-label">
+            <span class="label-line"></span>
+            <span>FEATURES</span>
+        </div>
+        <h1>System Features</h1>
+        <p class="lead">Comprehensive capabilities for waste prediction and analysis</p>
+    </div>
+</div>
+
+<section class="section features" style="background: var(--bg-base);">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12">
+                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1200&q=80" alt="Technology Features" class="img-fluid rounded" style="max-height: 400px; width: 100%; object-fit: cover;">
+            </div>
+        </div>
+        <div class="row g-4" style="gap: 1.5rem;">
+            <div class="col-lg-6">
+                <div class="card glass-card h-100" style="height: 100%;">
+                    <div class="card-body">
+                        <div class="fc-icon emerald mb-3" style="margin-bottom: 1rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/></svg>
+                        </div>
+                        <h3 class="fc-title">Model Explainability</h3>
+                        <p class="text-muted">
+                            Understand exactly which factors drive your waste predictions using SHAP (SHapley Additive exPlanations)
+                            values. The system identifies the top 5 waste-driving factors for each prediction.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><span class="emerald-text">✓</span> SHAP-based feature importance</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Top 5 waste-driving factors</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Impact direction (increases/decreases waste)</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Contribution values for transparency</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card glass-card h-100" style="height: 100%;">
+                    <div class="card-body">
+                        <div class="fc-icon cyan mb-3" style="margin-bottom: 1rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+                        </div>
+                        <h3 class="fc-title">Prediction Reliability</h3>
+                        <p class="text-muted">
+                            Get confidence indicators (High/Medium/Low) that reflect how representative your input data is
+                            relative to the training dataset.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><span class="emerald-text">✓</span> Three reliability levels</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Quantitative reliability score (0-100%)</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Descriptive messages</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Based on k-nearest neighbors analysis</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card glass-card h-100" style="height: 100%;">
+                    <div class="card-body">
+                        <div class="fc-icon gold mb-3" style="margin-bottom: 1rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75m15 0h.75"/></svg>
+                        </div>
+                        <h3 class="fc-title">Cost Impact Estimation</h3>
+                        <p class="text-muted">
+                            Calculate the financial implications of predicted steel waste, including waste cost and potential
+                            savings from waste reduction strategies.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><span class="emerald-text">✓</span> Waste cost calculation (USD)</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Potential cost savings</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Configurable steel quantity</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Customizable unit costs</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card glass-card h-100" style="height: 100%;">
+                    <div class="card-body">
+                        <div class="fc-icon blue mb-3" style="margin-bottom: 1rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"/></svg>
+                        </div>
+                        <h3 class="fc-title">CO₂ Impact Analysis</h3>
+                        <p class="text-muted">
+                            Estimate the environmental footprint of predicted waste, including CO₂ emissions and potential
+                            reductions from optimization.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><span class="emerald-text">✓</span> CO₂ emissions calculation (kg)</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Potential CO₂ reduction</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Environmental impact metrics</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Sustainability reporting</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card glass-card h-100" style="height: 100%;">
+                    <div class="card-body">
+                        <div class="fc-icon purple mb-3" style="margin-bottom: 1rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                        </div>
+                        <h3 class="fc-title">Real-Time Predictions</h3>
+                        <p class="text-muted">
+                            Get instant predictions and comprehensive analysis to make informed decisions during project planning
+                            and execution.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><span class="emerald-text">✓</span> Instant predictions</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Comprehensive analysis</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Actionable insights</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> User-friendly interface</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card glass-card h-100" style="height: 100%;">
+                    <div class="card-body">
+                        <div class="fc-icon emerald mb-3" style="margin-bottom: 1rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/></svg>
+                        </div>
+                        <h3 class="fc-title">Advanced ML Models</h3>
+                        <p class="text-muted">
+                            Built using state-of-the-art machine learning algorithms with comprehensive model comparison
+                            and selection.
+                        </p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><span class="emerald-text">✓</span> 10 different ML models tested</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Gradient Boosting (Best Model)</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> 93% accuracy (R² Score)</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> 10-fold cross-validation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card glass-card">
+                    <div class="card-body">
+                        <h2 class="section-title" style="font-size: 1.75rem; margin-bottom: 1.5rem;">Technical Specifications</h2>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <h5 class="fc-title">Model Performance</h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><strong>Test MAE:</strong> 0.73%</li>
+                                    <li class="mb-2"><strong>Test RMSE:</strong> 0.92%</li>
+                                    <li class="mb-2"><strong>Test R²:</strong> 0.93</li>
+                                    <li class="mb-2"><strong>Test MAPE:</strong> 10.88%</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <h5 class="fc-title">Training Data</h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><strong>Training Samples:</strong> 2,402</li>
+                                    <li class="mb-2"><strong>Test Samples:</strong> 602</li>
+                                    <li class="mb-2"><strong>Features:</strong> 16</li>
+                                    <li class="mb-2"><strong>CV Folds:</strong> 10</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <h5 class="fc-title">Technologies</h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">Python 3.x</li>
+                                    <li class="mb-2">Flask Web Framework</li>
+                                    <li class="mb-2">Scikit-learn</li>
+                                    <li class="mb-2">XGBoost</li>
+                                    <li class="mb-2">SHAP</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Steel Waste Prediction System{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="has-cursor-dock">
+    <!-- Custom Cursor -->
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-follower" id="cursorFollower"></div>
+
+    <!-- Floating Navigation -->
+    <nav class="nav-dock" id="navDock">
+        <a href="{{ url_for('index') }}" class="nav-logo">
+            <span class="logo-mark">S</span>
+            <span class="logo-text">STEEL WASTE AI</span>
+        </a>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Home</a>
+            <a href="{{ url_for('predict_page') }}" class="nav-link {% if request.endpoint == 'predict_page' %}active{% endif %}">Predict</a>
+            <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}active{% endif %}">About</a>
+            <a href="{{ url_for('features') }}" class="nav-link {% if request.endpoint == 'features' %}active{% endif %}">Features</a>
+        </div>
+        <div class="nav-actions">
+            <a href="{{ url_for('predict_page') }}" class="nav-btn">Make Prediction</a>
+            <div class="nav-status">
+                <span class="status-dot"></span>
+                <span class="status-text">LIVE</span>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <span class="logo-mark">S</span>
+                        <span class="logo-text">STEEL WASTE AI</span>
+                    </div>
+                    <p class="footer-tagline">Advanced ML-powered system for predicting and reducing steel waste in construction projects.</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-col">
+                        <span class="footer-col-title">Quick Links</span>
+                        <a href="{{ url_for('index') }}" class="footer-link">Home</a>
+                        <a href="{{ url_for('predict_page') }}" class="footer-link">Make Prediction</a>
+                        <a href="{{ url_for('about') }}" class="footer-link">About</a>
+                        <a href="{{ url_for('features') }}" class="footer-link">Features</a>
+                    </div>
+                    <div class="footer-col">
+                        <span class="footer-col-title">Information</span>
+                        <p class="footer-tagline" style="margin:0">For questions or support, please refer to the documentation.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span class="footer-copy">&copy; 2026 Steel Waste Prediction System. All rights reserved.</span>
+                <div class="footer-status-bar">
+                    <span class="status-dot"></span>
+                    <span class="mono-text">All systems operational</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

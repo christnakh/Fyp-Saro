@@ -1,0 +1,306 @@
+<!--
+    Prediction Page Template
+    ========================
+    
+    This template provides the main prediction interface where users input
+    project parameters and receive waste predictions. It includes:
+    - Comprehensive input form with 16 project parameters
+    - Results display section (shown after prediction)
+    - Explainability features display
+    - Reliability indicators
+    - Cost and CO2 impact calculations
+    
+    The form uses HTML5 validation and submits via POST to /predict route.
+    
+    Author: FYP Team G09
+    Date: 2026
+-->
+{% extends "base.html" %}
+
+{% block title %}Make Prediction - Steel Waste Prediction System{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top: calc(var(--nav-h) + 2rem);">
+    <div class="container">
+        <div class="row" style="justify-content: center;">
+            <div class="col-lg-10">
+                <div class="section-header" style="margin-bottom: 2rem;">
+                    <div class="section-label">
+                        <span class="label-line"></span>
+                        <span>PREDICTION</span>
+                    </div>
+                    <h1 class="section-title" style="margin-bottom: 0.5rem;">Steel Waste Prediction</h1>
+                    <p class="section-desc" style="margin: 0;">Enter your project parameters to predict steel waste percentage</p>
+                </div>
+            
+                <div class="card glass-card">
+                    <div class="card-body">
+                    <!-- 
+                        Form attributes:
+                        - id="predictionForm": Used by JavaScript for AJAX submission
+                        - method="POST": Sends data to server
+                        - action="{{ url_for('predict') }}": Flask route for processing
+                        - class="needs-validation": Enables Bootstrap validation styling
+                        - novalidate: Disables browser default validation (we use Bootstrap)
+                    -->
+                    <form id="predictionForm" method="POST" action="{{ url_for('predict') }}" class="needs-validation" novalidate>
+                        <!-- ====================================================
+                             SECTION 1: PROJECT INFORMATION
+                             ====================================================
+                             Basic project identification and phase information.
+                        -->
+                        <div class="form-section">
+                            <h5 class="section-title-form"><i class="bi bi-info-circle"></i> Project Information</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Project ID</label>
+                                    <input type="text" class="form-control" name="project_id" 
+                                           value="{% if form_data %}{{ form_data.project_id }}{% else %}P{{ project_id }}{% endif %}" placeholder="P1000" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Project Phase</label>
+                                    <select class="form-select" name="project_phase" required>
+                                        <option value="foundation" {% if form_data and form_data.project_phase == 'foundation' %}selected{% endif %}>Foundation</option>
+                                        <option value="frame" {% if not form_data or form_data.project_phase == 'frame' %}selected{% endif %}>Frame</option>
+                                        <option value="slab_finishing" {% if form_data and form_data.project_phase == 'slab_finishing' %}selected{% endif %}>Slab Finishing</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Material Parameters -->
+                        <div class="form-section">
+                            <h5 class="section-title-form"><i class="bi bi-box-seam"></i> Material Parameters</h5>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Reinforcement Ratio (kg/m³)</label>
+                                    <input type="number" class="form-control" name="reinforcement_ratio" 
+                                           value="120" min="60" max="180" step="0.1" required>
+                                    <small class="text-muted">Range: 60-180 kg/m³</small>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Number of Unique Required Lengths</label>
+                                    <input type="number" class="form-control" name="num_unique_lengths" 
+                                           value="20" min="5" max="40" required>
+                                    <small class="text-muted">Range: 5-40</small>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Stock Length Policy</label>
+                                    <select class="form-select" name="stock_length_policy" required>
+                                        <option value="standard_12m" selected>Standard 12m</option>
+                                        <option value="mixed_lengths">Mixed Lengths</option>
+                                        <option value="custom_lengths">Custom Lengths</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Cutting Optimization Usage</label>
+                                    <select class="form-select" name="cutting_optimization" required>
+                                        <option value="0" selected>None (0)</option>
+                                        <option value="1">Basic (1)</option>
+                                        <option value="2">Advanced (2)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Management & Control -->
+                        <div class="form-section">
+                            <h5 class="section-title-form"><i class="bi bi-shield-check"></i> Management & Control</h5>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Supervision Index (1-5)</label>
+                                    <input type="number" class="form-control" name="supervision_index" 
+                                           value="3" min="1" max="5" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Material Control Level (1-3)</label>
+                                    <input type="number" class="form-control" name="material_control" 
+                                           value="2" min="1" max="3" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Storage Handling Index (1-5)</label>
+                                    <input type="number" class="form-control" name="storage_handling" 
+                                           value="3" min="1" max="5" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">BIM Integration Level (0-3)</label>
+                                    <select class="form-select" name="bim_integration" required>
+                                        <option value="0" selected>None (0)</option>
+                                        <option value="1">Level 1</option>
+                                        <option value="2">Level 2</option>
+                                        <option value="3">Level 3</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Offcut Reuse Policy (0-2)</label>
+                                    <select class="form-select" name="offcut_reuse" required>
+                                        <option value="0" selected>None (0)</option>
+                                        <option value="1">Basic (1)</option>
+                                        <option value="2">Advanced (2)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Project Dynamics -->
+                        <div class="form-section">
+                            <h5 class="section-title-form"><i class="bi bi-graph-up"></i> Project Dynamics</h5>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Design Revisions per Month</label>
+                                    <input type="number" class="form-control" name="design_revisions" 
+                                           value="2" min="0" max="6" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Change Orders per Month</label>
+                                    <input type="number" class="form-control" name="change_orders" 
+                                           value="1" min="0" max="5" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Contract Type</label>
+                                    <select class="form-select" name="contract_type" required>
+                                        <option value="lump_sum" selected>Lump Sum</option>
+                                        <option value="design_build">Design Build</option>
+                                        <option value="remeasurement">Remeasurement</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Lead Time (days)</label>
+                                    <input type="number" class="form-control" name="lead_time" 
+                                           value="15" min="3" max="30" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Order Frequency per Month</label>
+                                    <input type="number" class="form-control" name="order_frequency" 
+                                           value="4" min="1" max="8" required>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Total Steel Quantity (kg)</label>
+                                    <input type="number" class="form-control" name="total_steel_kg" 
+                                           value="100000" min="1000" step="1000" required>
+                                    <small class="text-muted">Used for cost and CO₂ impact calculations</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn-predict btn-lg">
+                                <i class="bi bi-calculator"></i> Predict Steel Waste
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="loading" id="loading" style="display: none;">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Processing prediction...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card glass-card result-card" id="resultCard" style="display: none;">
+                <div class="card-body">
+                    <h4 class="card-title mb-4"><i class="bi bi-graph-up-arrow"></i> Prediction Results</h4>
+                    
+                    <div class="text-center mb-4">
+                        <h5 class="mb-3">Predicted Steel Waste</h5>
+                        <div class="waste-badge bg-{{ category_color }} text-white d-inline-block" id="wasteBadge">
+                            {{ predicted_waste }}%
+                        </div>
+                        <p class="mt-3 mb-0">
+                            <span class="badge bg-{{ category_color }}">{{ category }}</span>
+                        </p>
+                    </div>
+                    
+                    <div class="info-box">
+                        <h6><i class="bi bi-info-circle"></i> Interpretation</h6>
+                        <p class="mb-0" id="interpretation">{{ interpretation }}</p>
+                    </div>
+                    
+                    <!-- Reliability Indicator -->
+                    <div class="info-box mt-3">
+                        <h6><i class="bi bi-shield-check"></i> Prediction Reliability</h6>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-{{ reliability_color }} me-2">{{ reliability_level }}</span>
+                            <span class="text-muted">{{ reliability_score }} confidence</span>
+                        </div>
+                        <p class="mb-0 mt-2"><small>{{ reliability_message }}</small></p>
+                    </div>
+                    
+                    <!-- Cost and CO₂ Impact -->
+                    <div class="mt-4">
+                        <h5 class="section-title-form"><i class="bi bi-cash-coin"></i> Financial & Environmental Impact</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-danger impact-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-danger"><i class="bi bi-exclamation-triangle"></i> Waste Cost</h6>
+                                        <h4 class="text-danger">{{ waste_cost }}</h4>
+                                        <small class="text-muted">For {{ total_steel_kg }} kg steel ({{ waste_kg }} kg waste)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-warning impact-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-warning"><i class="bi bi-cloud"></i> CO₂ Emissions</h6>
+                                        <h4 class="text-warning">{{ waste_co2 }} kg CO₂</h4>
+                                        <small class="text-muted">From wasted steel</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-success impact-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-success"><i class="bi bi-piggy-bank"></i> Potential Savings</h6>
+                                        <h4 class="text-success">{{ potential_savings_cost }}</h4>
+                                        <small class="text-muted">With 50% waste reduction</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-info impact-card">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-info"><i class="bi bi-leaf"></i> CO₂ Reduction</h6>
+                                        <h4 class="text-info">{{ potential_co2_reduction }} kg CO₂</h4>
+                                        <small class="text-muted">Potential reduction</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Explainability -->
+                    <div class="mt-4">
+                        <h5 class="section-title-form"><i class="bi bi-lightbulb"></i> Top Waste-Driving Factors</h5>
+                        <p class="text-muted"><small>Based on {{ explainability_method }} analysis</small></p>
+                        <div class="alert alert-info mb-3">
+                            <small><i class="bi bi-info-circle"></i> <strong>Note:</strong> SHAP values show impact relative to training data baseline. Negative values mean "better than average" (reduces waste compared to baseline), positive values mean "worse than average" (increases waste compared to baseline).</small>
+                        </div>
+                        {{ explainability_features|safe }}
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="button" class="btn-secondary" onclick="resetForm()">
+                            <i class="bi bi-arrow-clockwise"></i> Make Another Prediction
+                        </button>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

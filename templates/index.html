@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Steel Waste Prediction System{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero" id="home">
+    <div class="hero-grid-overlay"></div>
+    <div class="hero-noise"></div>
+
+    <div class="hero-content">
+        <div class="hero-eyebrow reveal-up">
+            <span class="eyebrow-line"></span>
+            <span class="eyebrow-text">Steel Waste Prediction System</span>
+            <span class="eyebrow-line"></span>
+        </div>
+
+        <h1 class="hero-title reveal-up">
+            <span class="title-line">Predict & Reduce</span>
+            <span class="title-line gradient-text">Steel Waste</span>
+            <span class="title-line">with AI</span>
+        </h1>
+
+        <p class="hero-subtitle reveal-up">
+            Advanced machine learning system that predicts steel waste percentage in construction projects
+            and provides actionable insights to reduce material waste, costs, and environmental impact.
+        </p>
+
+        <div class="hero-actions reveal-up">
+            <a href="{{ url_for('predict_page') }}" class="btn-primary magnetic">
+                <span class="btn-text">Make Prediction</span>
+                <span class="btn-glow"></span>
+                <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+            </a>
+            <a href="{{ url_for('about') }}" class="btn-ghost magnetic">Learn More</a>
+        </div>
+
+        <div class="hero-stats reveal-up">
+            <div class="stat-item">
+                <span class="stat-value">93</span><span class="stat-unit">%</span>
+                <span class="stat-label">Model Accuracy (R²)</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-value">10+</span><span class="stat-unit"></span>
+                <span class="stat-label">ML Models Tested</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-value">3000+</span><span class="stat-unit"></span>
+                <span class="stat-label">Training Samples</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-value">16</span><span class="stat-unit"></span>
+                <span class="stat-label">Input Parameters</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="hero-scroll-indicator">
+        <div class="scroll-line"></div>
+        <span class="scroll-label">SCROLL TO EXPLORE</span>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features section" id="features">
+    <div class="section-header reveal-up">
+        <div class="section-label">
+            <span class="label-line"></span>
+            <span>KEY FEATURES</span>
+        </div>
+        <h2 class="section-title">Comprehensive <em>Waste Prediction</em><br />and Analysis</h2>
+        <p class="section-desc">AI-powered insights to reduce material waste, costs, and environmental impact.</p>
+    </div>
+
+    <div class="feature-cards">
+        <div class="feature-card glass-card tilt-card reveal-up" data-delay="0">
+            <div class="fc-icon emerald">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"/></svg>
+            </div>
+            <h3 class="fc-title">AI-Powered Predictions</h3>
+            <p class="fc-desc">Advanced machine learning models trained on construction data to accurately predict steel waste percentage.</p>
+            <a href="{{ url_for('predict_page') }}" class="fc-link">Make Prediction <span>→</span></a>
+        </div>
+
+        <div class="feature-card glass-card tilt-card reveal-up" data-delay="100">
+            <div class="fc-icon cyan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+            </div>
+            <h3 class="fc-title">Reliability Indicators</h3>
+            <p class="fc-desc">Get confidence scores for each prediction based on how similar your project is to training data.</p>
+            <a href="{{ url_for('features') }}" class="fc-link">Explore <span>→</span></a>
+        </div>
+
+        <div class="feature-card glass-card tilt-card reveal-up" data-delay="200">
+            <div class="fc-icon gold">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75m15 0h.75"/></svg>
+            </div>
+            <h3 class="fc-title">Cost & CO₂ Analysis</h3>
+            <p class="fc-desc">Calculate financial impact and environmental footprint of predicted waste, with potential savings estimates.</p>
+            <a href="{{ url_for('features') }}" class="fc-link">Explore <span>→</span></a>
+        </div>
+
+        <div class="feature-card glass-card tilt-card reveal-up" data-delay="0">
+            <div class="fc-icon blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"/></svg>
+            </div>
+            <h3 class="fc-title">Feature Explainability</h3>
+            <p class="fc-desc">Understand which factors drive waste predictions using SHAP-based explanations.</p>
+            <a href="{{ url_for('features') }}" class="fc-link">Explore <span>→</span></a>
+        </div>
+
+        <div class="feature-card glass-card tilt-card reveal-up" data-delay="100">
+            <div class="fc-icon purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+            </div>
+            <h3 class="fc-title">Real-Time Analysis</h3>
+            <p class="fc-desc">Get instant predictions and insights to make informed decisions during project planning.</p>
+            <a href="{{ url_for('predict_page') }}" class="fc-link">Try Now <span>→</span></a>
+        </div>
+
+        <div class="feature-card glass-card tilt-card reveal-up" data-delay="200">
+            <div class="fc-icon emerald">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"/></svg>
+            </div>
+            <h3 class="fc-title">Actionable Insights</h3>
+            <p class="fc-desc">Identify top waste-driving factors and receive recommendations to optimize material usage.</p>
+            <a href="{{ url_for('predict_page') }}" class="fc-link">Get Insights <span>→</span></a>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="section" style="background: var(--bg-base);">
+    <div class="section-header reveal-up">
+        <div class="section-label">
+            <span class="label-line"></span>
+            <span>HOW IT WORKS</span>
+        </div>
+        <h2 class="section-title">Simple Steps to <em>Accurate Predictions</em></h2>
+    </div>
+    <div class="container">
+        <div class="row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2rem; margin: 0;">
+            <div class="reveal-up" data-delay="0" style="text-align: center;">
+                <div style="width: 56px; height: 56px; margin: 0 auto 1rem; background: var(--emerald-dim); border: 1px solid rgba(16,185,129,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 1.25rem; color: var(--emerald);">1</div>
+                <h5 style="font-family: var(--font-sans); margin-bottom: 0.5rem;">Enter Project Details</h5>
+                <p class="text-muted" style="font-size: 0.9rem;">Input your project parameters including material specifications, management controls, and project dynamics.</p>
+            </div>
+            <div class="reveal-up" data-delay="100" style="text-align: center;">
+                <div style="width: 56px; height: 56px; margin: 0 auto 1rem; background: var(--emerald-dim); border: 1px solid rgba(16,185,129,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 1.25rem; color: var(--emerald);">2</div>
+                <h5 style="font-family: var(--font-sans); margin-bottom: 0.5rem;">AI Analysis</h5>
+                <p class="text-muted" style="font-size: 0.9rem;">Our machine learning model analyzes your inputs and predicts steel waste percentage with confidence scores.</p>
+            </div>
+            <div class="reveal-up" data-delay="200" style="text-align: center;">
+                <div style="width: 56px; height: 56px; margin: 0 auto 1rem; background: var(--emerald-dim); border: 1px solid rgba(16,185,129,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 1.25rem; color: var(--emerald);">3</div>
+                <h5 style="font-family: var(--font-sans); margin-bottom: 0.5rem;">Get Insights</h5>
+                <p class="text-muted" style="font-size: 0.9rem;">Receive detailed explanations of waste-driving factors, cost impact, and CO₂ emissions.</p>
+            </div>
+            <div class="reveal-up" data-delay="300" style="text-align: center;">
+                <div style="width: 56px; height: 56px; margin: 0 auto 1rem; background: var(--emerald-dim); border: 1px solid rgba(16,185,129,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-weight: 700; font-size: 1.25rem; color: var(--emerald);">4</div>
+                <h5 style="font-family: var(--font-sans); margin-bottom: 0.5rem;">Take Action</h5>
+                <p class="text-muted" style="font-size: 0.9rem;">Use the insights to optimize your project parameters and reduce waste, costs, and environmental impact.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="cta-content reveal-up">
+        <div class="section-label">
+            <span class="label-line"></span>
+            <span>READY TO OPTIMIZE</span>
+        </div>
+        <h2 class="cta-title">Start Predicting & Reducing<br /><span class="gradient-text">Steel Waste</span><br />Today</h2>
+        <p class="cta-sub">Get accurate predictions and actionable insights for your construction projects.</p>
+        <div class="cta-actions">
+            <a href="{{ url_for('predict_page') }}" class="btn-primary magnetic large">
+                <span class="btn-text">Make Your First Prediction</span>
+                <span class="btn-glow"></span>
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
