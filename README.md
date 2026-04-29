@@ -4,7 +4,7 @@
 
 **Advanced Machine Learning System for Predicting Steel Waste in Construction Projects**
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0.0-green.svg)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-Academic-blue.svg)](LICENSE)
 
@@ -119,9 +119,12 @@ This system addresses these challenges by providing accurate, actionable predict
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.11 (recommended for deployment compatibility)
 - pip (Python package manager)
 - Git (optional, for cloning)
+
+> Deployment note: this project includes `runtime.txt` and `.python-version` set to `3.11.11`.  
+> If your host defaults to Python 3.14, force Python 3.11 in the hosting settings to avoid pandas build failures.
 
 ### Step 1: Clone or Download
 
