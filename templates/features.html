@@ -14,6 +14,15 @@
     </div>
 </div>
 
+<div class="container" style="margin-bottom: 1.75rem;">
+    <div class="card glass-card" style="padding: 1rem 1.35rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+        <p class="mb-0 text-muted" style="font-size: 0.92rem; max-width: 42rem;">
+            <strong class="text-secondary">Live exploration:</strong> submit a project on <a href="{{ url_for('predict_page') }}" class="fc-link">Predict</a>, then use interactive levers on the results card — the gauge, p10/p90 band, cost, and CO₂ tiles refresh in real time.
+        </p>
+        <a href="{{ url_for('predict_page') }}" class="btn-primary magnetic">Open predictor</a>
+    </div>
+</div>
+
 <section class="section features" style="background: var(--bg-base);">
     <div class="container">
         <div class="row mb-5">
@@ -30,14 +39,15 @@
                         </div>
                         <h3 class="fc-title">Model Explainability</h3>
                         <p class="text-muted">
-                            Understand exactly which factors drive your waste predictions using SHAP (SHapley Additive exPlanations)
-                            values. The system identifies the top 5 waste-driving factors for each prediction.
+                            When SHAP is active, see the top factors that <strong>increase</strong> waste versus those that
+                            <strong>reduce</strong> it, then use interactive levers to explore “what-if” scenarios with live
+                            updates to the prediction and cost tiles.
                         </p>
                         <ul class="list-unstyled">
-                            <li class="mb-2"><span class="emerald-text">✓</span> SHAP-based feature importance</li>
-                            <li class="mb-2"><span class="emerald-text">✓</span> Top 5 waste-driving factors</li>
-                            <li class="mb-2"><span class="emerald-text">✓</span> Impact direction (increases/decreases waste)</li>
-                            <li class="mb-2"><span class="emerald-text">✓</span> Contribution values for transparency</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> SHAP-based drivers (up to three each way)</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Parameter help placeholders (expandable)</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Scenario sliders with reset to submitted values</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Fallback global ranking if SHAP is unavailable</li>
                         </ul>
                     </div>
                 </div>
@@ -72,12 +82,12 @@
                         </div>
                         <h3 class="fc-title">Cost Impact Estimation</h3>
                         <p class="text-muted">
-                            Calculate the financial implications of predicted steel waste, including waste cost and potential
-                            savings from waste reduction strategies.
+                            Waste cost and CO₂ from predicted waste mass; <strong>potential savings</strong> use a SHAP-driven
+                            counterfactual (top upward drivers moved toward training-set averages), not a fixed percentage cut.
                         </p>
                         <ul class="list-unstyled">
                             <li class="mb-2"><span class="emerald-text">✓</span> Waste cost calculation (USD)</li>
-                            <li class="mb-2"><span class="emerald-text">✓</span> Potential cost savings</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Counterfactual potential savings (SHAP)</li>
                             <li class="mb-2"><span class="emerald-text">✓</span> Configurable steel quantity</li>
                             <li class="mb-2"><span class="emerald-text">✓</span> Customizable unit costs</li>
                         </ul>
@@ -114,12 +124,12 @@
                         </div>
                         <h3 class="fc-title">Real-Time Predictions</h3>
                         <p class="text-muted">
-                            Get instant predictions and comprehensive analysis to make informed decisions during project planning
-                            and execution.
+                            Results include a green–red gauge with neighbor-based <strong>p10 / p90</strong> bands, category
+                            interpretation, and optional live refresh while you move scenario controls.
                         </p>
                         <ul class="list-unstyled">
-                            <li class="mb-2"><span class="emerald-text">✓</span> Instant predictions</li>
-                            <li class="mb-2"><span class="emerald-text">✓</span> Comprehensive analysis</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Expected waste with uncertainty band</li>
+                            <li class="mb-2"><span class="emerald-text">✓</span> Reliability score with defined High/Medium/Low ranges</li>
                             <li class="mb-2"><span class="emerald-text">✓</span> Actionable insights</li>
                             <li class="mb-2"><span class="emerald-text">✓</span> User-friendly interface</li>
                         </ul>

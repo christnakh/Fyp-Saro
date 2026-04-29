@@ -24,6 +24,8 @@ import numpy as np  # Numerical operations and random number generation
 import os  # File system operations
 from model import ModelComparison  # Custom ML model comparison class
 import warnings  # Suppress warnings for cleaner output
+from config import CO2_PER_KG_STEEL, STEEL_COST_PER_KG_USD
+
 warnings.filterwarnings('ignore')  # Ignore all warnings (e.g., deprecation warnings)
 
 # ============================================================================
@@ -42,6 +44,26 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 # Global model loader - stores the loaded ML model to avoid reloading on every request
 # This improves performance by loading the model once and reusing it
 model_comparator = None
+
+def train_model_if_needed(model_path='models/best_steel_waste_model.pkl'):
+    """
+    Train and save the model if the model file does not exist.
+    Requires data/train_data.csv and data/test_data.csv to be present.
+    """
+    if os.path.exists(model_path):
+        return
+    print(f"Model not found at {model_path}. Training model...")
+    try:
+        train_df = pd.read_csv('data/train_data.csv')
+        test_df = pd.read_csv('data/test_data.csv')
+    except FileNotFoundError as e:
+        raise FileNotFoundError(
+            f"Training data not found. Please run 'data_generation/generate_train_test_data.py' first to create data/train_data.csv and data/test_data.csv. Original error: {e}"
+        )
+    comparator = ModelComparison(cv_folds=10, random_state=42)
+    comparator.compare_models(train_df, test_df)
+    comparator.save_best_model(model_path)
+    print("Model training complete.")
 
 def load_model():
     """
@@ -65,9 +87,7 @@ def load_model():
         
         # Check if model file exists
         if not os.path.exists(model_path):
-            raise FileNotFoundError(
-                f"Model not found at {model_path}. Please train the model first."
-            )
+            train_model_if_needed(model_path)
         
         # Create ModelComparison instance and load the saved model
         model_comparator = ModelComparison()
@@ -112,6 +132,66 @@ def get_waste_category(waste_percentage):
     # Very poor performance - excessive waste
     else:
         return "Very Poor", "danger"  # Red badge
+
+# Category blurbs (HTML + /api/predict live updates)
+WASTE_CATEGORY_INTERPRETATIONS = {
+    'Excellent': 'Excellent waste management! This project demonstrates best practices with minimal material waste.',
+    'Good': 'Good waste management. The project is performing well with acceptable waste levels.',
+    'Average': 'Average waste levels. Consider implementing optimization strategies to improve efficiency.',
+    'Poor': 'Poor waste management. Immediate action needed to reduce waste and improve material control.',
+    'Very Poor': 'Very poor waste management. Critical review of processes required to address excessive waste.',
+}
+
+RELIABILITY_BADGE_COLORS = {
+    'high': 'success',
+    'medium': 'warning',
+    'low': 'danger',
+}
+
+# Feature columns required in JSON body for /api/predict (project_id optional; filled if absent)
+API_PREDICT_FEATURE_KEYS = frozenset({
+    'reinforcement_ratio_kg_per_m3',
+    'num_unique_required_lengths',
+    'stock_length_policy',
+    'cutting_optimization_usage',
+    'bim_integration_level',
+    'design_revisions_per_month',
+    'supervision_index_1to5',
+    'material_control_level_1to3',
+    'storage_handling_index_1to5',
+    'offcut_reuse_policy_0to2',
+    'change_orders_per_month',
+    'contract_type',
+    'lead_time_days',
+    'order_frequency_per_month',
+    'project_phase',
+})
+
+# Human-readable names for model feature keys (UI + API)
+FEATURE_DISPLAY_NAMES = {
+    'offcut_reuse_policy_0to2': 'Offcut Reuse Policy',
+    'cutting_optimization_usage': 'Cutting Optimization Usage',
+    'change_orders_per_month': 'Change Orders Per Month',
+    'stock_length_policy': 'Stock Length Policy',
+    'design_revisions_per_month': 'Design Revisions Per Month',
+    'bim_integration_level': 'BIM Integration Level',
+    'supervision_index_1to5': 'Supervision Index',
+    'material_control_level_1to3': 'Material Control Level',
+    'storage_handling_index_1to5': 'Storage Handling Index',
+    'reinforcement_ratio_kg_per_m3': 'Reinforcement Ratio (kg/m³)',
+    'num_unique_required_lengths': 'Number of Unique Required Lengths',
+    'lead_time_days': 'Lead Time (days)',
+    'order_frequency_per_month': 'Order Frequency per Month',
+    'contract_type': 'Contract Type',
+    'project_phase': 'Project Phase',
+}
+
+# Placeholder copy until literature/definitions are provided
+PARAMETER_HELP_PLACEHOLDER = (
+    'Definition coming soon. This parameter will be described in a future update.'
+)
+PARAMETER_HELP = {k: PARAMETER_HELP_PLACEHOLDER for k in FEATURE_DISPLAY_NAMES}
+
 
 def format_explainability_features(explanation):
     """
@@ -204,6 +284,289 @@ def format_explainability_features(explanation):
     explainability_html += '</div>'
     return explainability_html
 
+
+def _json_safe(obj):
+    """Convert numpy scalars and nested structures for Jinja ``|tojson`` / jsonify."""
+    if isinstance(obj, dict):
+        return {str(k): _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    if isinstance(obj, (np.floating, np.float64, np.float32)):
+        return float(obj)
+    if isinstance(obj, (np.integer, np.int64, np.int32, np.intc)):
+        return int(obj)
+    if isinstance(obj, (np.bool_,)):
+        return bool(obj)
+    return obj
+
+
+def split_shap_driver_lists(explanation: dict):
+    """
+    Top three positive SHAP (increase waste) and top three negative (decrease waste).
+    Returns (positive_features, negative_features, shap_ok).
+    """
+    if explanation.get('method') != 'SHAP' or not explanation.get('all_features'):
+        return [], [], False
+    all_f = explanation['all_features']
+    pos = sorted([(k, float(v)) for k, v in all_f.items() if v > 0], key=lambda x: -x[1])[:3]
+    neg = sorted([(k, float(v)) for k, v in all_f.items() if v < 0], key=lambda x: x[1])[:3]
+
+    def _row(k, v):
+        return {
+            'feature': k,
+            'contribution': v,
+            'display': FEATURE_DISPLAY_NAMES.get(k, k.replace('_', ' ').title()),
+            'help': PARAMETER_HELP.get(k, PARAMETER_HELP_PLACEHOLDER),
+        }
+
+    return [_row(k, v) for k, v in pos], [_row(k, v) for k, v in neg], True
+
+
+def _gauge_scale(pred, p10, p90, intervals_ok):
+    """Linear scale endpoints and marker position (0–100%)."""
+    if intervals_ok and p10 is not None and p90 is not None:
+        lo = float(min(p10, pred)) - 0.5
+        hi = float(max(p90, pred)) + 0.5
+    else:
+        lo, hi = 0.0, max(15.0, float(pred) + 2.0)
+    if hi <= lo:
+        hi = lo + 2.0
+
+    def pct(val):
+        return max(0.0, min(100.0, (float(val) - lo) / (hi - lo) * 100.0))
+
+    out = {
+        'gauge_lo': lo,
+        'gauge_hi': hi,
+        'marker_pct': pct(pred),
+        'p10_pct': pct(p10) if intervals_ok and p10 is not None else None,
+        'p90_pct': pct(p90) if intervals_ok and p90 is not None else None,
+    }
+    return out
+
+
+def build_prediction_bundle(comparator: ModelComparison, row: dict, total_steel_kg: float) -> dict:
+    """
+    Single code path for HTML and JSON predictions.
+    `row` must contain all model feature columns (no total_steel_kg).
+    """
+    steel_cost = STEEL_COST_PER_KG_USD
+    co2_factor = CO2_PER_KG_STEEL
+
+    df = pd.DataFrame([row])
+    prediction = float(comparator.predict(df)[0])
+    intervals = comparator.prediction_intervals_for_row(df)
+    intervals_ok = bool(intervals.get('available'))
+    p10 = intervals.get('p10')
+    p90 = intervals.get('p90')
+
+    explanation = comparator.explain_prediction(df, top_n=5)
+    reliability = comparator.calculate_reliability(df)
+    cost_co2 = comparator.calculate_cost_co2_impact(
+        prediction,
+        total_steel_kg=total_steel_kg,
+        steel_cost_per_kg=steel_cost,
+        co2_per_kg_steel=co2_factor,
+    )
+    counterfactual = comparator.calculate_counterfactual_potential(
+        df, explanation, total_steel_kg, steel_cost, co2_factor
+    )
+
+    pos_feats, neg_feats, shap_split = split_shap_driver_lists(explanation)
+    scenario_keys = []
+    for item in pos_feats + neg_feats:
+        fk = item['feature']
+        if fk not in scenario_keys:
+            scenario_keys.append(fk)
+
+    bounds = {}
+    if comparator.training_feature_bounds:
+        for k in scenario_keys:
+            if k in comparator.training_feature_bounds:
+                bounds[k] = comparator.training_feature_bounds[k]
+
+    api_row = {**row, 'total_steel_kg': float(total_steel_kg)}
+    scenario_json = _json_safe({
+        'apiPayloadBaseline': api_row,
+        'scenarioFeatureKeys': scenario_keys,
+        'bounds': bounds,
+        'displayNames': {k: FEATURE_DISPLAY_NAMES.get(k, k) for k in scenario_keys},
+        'helps': {k: PARAMETER_HELP.get(k, PARAMETER_HELP_PLACEHOLDER) for k in scenario_keys},
+    })
+
+    gauge = _gauge_scale(prediction, p10, p90, intervals_ok)
+
+    return {
+        'prediction': prediction,
+        'p10': p10,
+        'p90': p90,
+        'intervals_available': intervals_ok,
+        'explanation': explanation,
+        'reliability': reliability,
+        'cost_co2': cost_co2,
+        'counterfactual': counterfactual,
+        'positive_features': pos_feats,
+        'negative_features': neg_feats,
+        'shap_split': shap_split,
+        'scenario_json': scenario_json,
+        'gauge': gauge,
+        'steel_cost_per_kg': steel_cost,
+        'co2_per_kg_steel': co2_factor,
+    }
+
+
+def _template_vars_from_bundle(bundle, form_data):
+    """Flatten bundle into predict.html template variables."""
+    pred = bundle['prediction']
+    p10 = bundle['p10']
+    p90 = bundle['p90']
+    intervals_ok = bundle['intervals_available']
+    reliability = bundle['reliability']
+    cost = bundle['cost_co2']
+    cf = bundle['counterfactual']
+    explanation = bundle['explanation']
+    gauge = bundle['gauge']
+    category, category_color = get_waste_category(pred)
+
+    reliability_badge_color = RELIABILITY_BADGE_COLORS[reliability['reliability_level']]
+
+    if cf['available']:
+        potential_savings_cost = f"${cf['potential_cost_savings_usd']:,.0f}"
+        potential_co2_reduction = f"{cf['potential_co2_reduction_kg']:,.0f}"
+        savings_subtext = (
+            'If the three strongest waste-increasing factors (SHAP) matched average levels '
+            'in the synthetic training database.'
+        )
+    else:
+        potential_savings_cost = 'N/A'
+        potential_co2_reduction = 'N/A'
+        savings_subtext = cf.get('message', 'Not available for this prediction.')
+
+    explainability_fallback_html = (
+        format_explainability_features(explanation) if not bundle['shap_split'] else ''
+    )
+
+    return {
+        'has_prediction': True,
+        'predicted_waste': f'{pred:.2f}',
+        'p10_display': f'{p10:.2f}' if intervals_ok and p10 is not None else '—',
+        'p90_display': f'{p90:.2f}' if intervals_ok and p90 is not None else '—',
+        'intervals_available': intervals_ok,
+        'gauge_lo': gauge['gauge_lo'],
+        'gauge_hi': gauge['gauge_hi'],
+        'gauge_marker_pct': gauge['marker_pct'],
+        'gauge_p10_pct': gauge['p10_pct'],
+        'gauge_p90_pct': gauge['p90_pct'],
+        'category': category,
+        'category_color': category_color,
+        'interpretation': WASTE_CATEGORY_INTERPRETATIONS[category],
+        'reliability_level': reliability['reliability_level'].upper(),
+        'reliability_color': reliability_badge_color,
+        'reliability_message': reliability['message'],
+        'reliability_score': f"{reliability['reliability_score']:.0%}",
+        'waste_cost': f"${cost['waste_cost_usd']:,.0f}",
+        'waste_co2': f"{cost['waste_co2_kg']:,.0f}",
+        'potential_savings_cost': potential_savings_cost,
+        'potential_co2_reduction': potential_co2_reduction,
+        'total_steel_kg': f"{cost['total_steel_kg']:,.0f}",
+        'waste_kg': f"{cost['waste_kg']:,.0f}",
+        'unit_cost_label': f"${bundle['steel_cost_per_kg']:.2f}/kg steel (waste)",
+        'unit_co2_label': f"{bundle['co2_per_kg_steel']:.2f} kg CO₂/kg steel (waste)",
+        'savings_subtext': savings_subtext,
+        'explainability_method': explanation['method'],
+        'positive_features': bundle['positive_features'],
+        'negative_features': bundle['negative_features'],
+        'shap_split': bundle['shap_split'],
+        'explainability_fallback_html': explainability_fallback_html,
+        'scenario_json': bundle['scenario_json'],
+        'form_data': form_data,
+        'prediction_error': None,
+    }
+
+
+def _empty_predict_template_vars():
+    """Defaults when no prediction has been run."""
+    return {
+        'has_prediction': False,
+        'prediction_error': None,
+        'predicted_waste': '',
+        'p10_display': '—',
+        'p90_display': '—',
+        'intervals_available': False,
+        'gauge_lo': 0.0,
+        'gauge_hi': 15.0,
+        'gauge_marker_pct': 0.0,
+        'gauge_p10_pct': None,
+        'gauge_p90_pct': None,
+        'category': '',
+        'category_color': 'secondary',
+        'interpretation': 'Enter project parameters and click "Predict Steel Waste" to get started.',
+        'reliability_level': '',
+        'reliability_color': 'secondary',
+        'reliability_message': '',
+        'reliability_score': '',
+        'waste_cost': '$0',
+        'waste_co2': '0',
+        'potential_savings_cost': '$0',
+        'potential_co2_reduction': '0',
+        'total_steel_kg': '100,000',
+        'waste_kg': '0',
+        'unit_cost_label': f'${STEEL_COST_PER_KG_USD:.2f}/kg steel (waste)',
+        'unit_co2_label': f'{CO2_PER_KG_STEEL:.2f} kg CO₂/kg steel (waste)',
+        'savings_subtext': '',
+        'explainability_method': 'Feature Importance',
+        'positive_features': [],
+        'negative_features': [],
+        'shap_split': False,
+        'explainability_fallback_html': '<p class="text-muted">Make a prediction to see feature contributions.</p>',
+        'scenario_json': None,
+        'form_data': None,
+    }
+
+
+def _json_api_response(bundle: dict) -> dict:
+    """Shape returned by /api/predict."""
+    pred = bundle['prediction']
+    category, _ = get_waste_category(pred)
+    intervals_ok = bundle['intervals_available']
+    cf = bundle['counterfactual']
+    pos = bundle['positive_features']
+    neg = bundle['negative_features']
+    shap_ok = bundle['shap_split']
+
+    scenario_keys = [x['feature'] for x in pos + neg]
+    unique_keys = []
+    for k in scenario_keys:
+        if k not in unique_keys:
+            unique_keys.append(k)
+    param_help = {k: PARAMETER_HELP.get(k, PARAMETER_HELP_PLACEHOLDER) for k in unique_keys}
+
+    rel = bundle['reliability']
+    rel_level = rel['reliability_level']
+    return _json_safe({
+        'success': True,
+        'predicted_waste_percentage': round(pred, 2),
+        'p10': round(bundle['p10'], 2) if intervals_ok and bundle['p10'] is not None else None,
+        'p90': round(bundle['p90'], 2) if intervals_ok and bundle['p90'] is not None else None,
+        'prediction_intervals_available': intervals_ok,
+        'waste_category': category,
+        'interpretation': WASTE_CATEGORY_INTERPRETATIONS[category],
+        'reliability': rel,
+        'reliability_badge_color': RELIABILITY_BADGE_COLORS.get(rel_level, 'secondary'),
+        'reliability_level_display': rel_level.upper(),
+        'reliability_score_display': f"{rel['reliability_score']:.0%}",
+        'explainability': bundle['explanation'],
+        'explainability_positive': pos,
+        'explainability_negative': neg,
+        'shap_directional_split': shap_ok,
+        'cost_co2_impact': bundle['cost_co2'],
+        'counterfactual_savings': cf,
+        'gauge': bundle['gauge'],
+        'parameter_help': param_help,
+        'scenario_context': bundle['scenario_json'],
+    })
+
+
 # ============================================================================
 # FLASK ROUTES - WEB PAGES
 # ============================================================================
@@ -235,24 +598,12 @@ def predict_page():
     Returns:
         str: Rendered HTML template with empty prediction form
     """
-    return render_template('predict.html', 
-                         project_id=str(np.random.randint(1000, 9999)),
-                         predicted_waste='',
-                         category='',
-                         category_color='secondary',
-                         interpretation='Enter project parameters and click "Predict Steel Waste" to get started.',
-                         reliability_level='',
-                         reliability_color='secondary',
-                         reliability_message='',
-                         reliability_score='',
-                         waste_cost='$0',
-                         waste_co2='0',
-                         potential_savings_cost='$0',
-                         potential_co2_reduction='0',
-                         total_steel_kg='100,000',
-                         waste_kg='0',
-                         explainability_features='<p class="text-muted">Make a prediction to see feature contributions.</p>',
-                         explainability_method='Feature Importance')
+    ctx = _empty_predict_template_vars()
+    return render_template(
+        'predict.html',
+        project_id=str(np.random.randint(1000, 9999)),
+        **ctx,
+    )
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -275,14 +626,8 @@ def predict():
         If an error occurs, returns the form with error message displayed
     """
     try:
-        # Load the trained model (singleton pattern - cached after first load)
         comparator = load_model()
-        
-        # ====================================================================
-        # EXTRACT FORM DATA
-        # ====================================================================
-        # Collect all form parameters and convert to appropriate data types
-        # Default values are provided for optional fields
+
         data = {
             'project_id': request.form.get('project_id', 'P' + str(np.random.randint(1000, 9999))),
             'reinforcement_ratio_kg_per_m3': float(request.form.get('reinforcement_ratio', 120)),
@@ -299,115 +644,29 @@ def predict():
             'contract_type': request.form.get('contract_type', 'lump_sum'),
             'lead_time_days': int(request.form.get('lead_time', 15)),
             'order_frequency_per_month': int(request.form.get('order_frequency', 4)),
-            'project_phase': request.form.get('project_phase', 'frame')  # Default: frame
+            'project_phase': request.form.get('project_phase', 'frame'),
         }
-        
-        # ====================================================================
-        # MAKE PREDICTION
-        # ====================================================================
-        # Convert form data to DataFrame (required format for model)
-        df = pd.DataFrame([data])
-        
-        # Get waste percentage prediction (returns array, take first element)
-        prediction = comparator.predict(df)[0]
-        
-        # ====================================================================
-        # CALCULATE EXPLAINABILITY
-        # ====================================================================
-        # Get top 5 most influential features using SHAP or feature importance
-        explanation = comparator.explain_prediction(df, top_n=5)
-        
-        # ====================================================================
-        # CALCULATE RELIABILITY
-        # ====================================================================
-        # Determine how reliable the prediction is based on similarity to training data
-        reliability = comparator.calculate_reliability(df)
-        
-        # ====================================================================
-        # CALCULATE COST AND CO2 IMPACT
-        # ====================================================================
-        # Get total steel quantity from form (default: 100,000 kg)
+
         total_steel_kg = float(request.form.get('total_steel_kg', 100000))
-        
-        # Calculate financial and environmental impact
-        cost_co2 = comparator.calculate_cost_co2_impact(
-            prediction, 
-            total_steel_kg=total_steel_kg
+        bundle = build_prediction_bundle(comparator, data, total_steel_kg)
+        form_with_steel = dict(data)
+        form_with_steel['total_steel_kg'] = total_steel_kg
+        tpl = _template_vars_from_bundle(bundle, form_with_steel)
+
+        return render_template(
+            'predict.html',
+            project_id=data['project_id'],
+            **tpl,
         )
-        
-        # ====================================================================
-        # CATEGORIZE WASTE LEVEL
-        # ====================================================================
-        # Convert numerical prediction to qualitative category
-        category, category_color = get_waste_category(prediction)
-        
-        # ====================================================================
-        # PREPARE DISPLAY DATA
-        # ====================================================================
-        # Human-readable interpretations for each waste category
-        interpretations = {
-            'Excellent': 'Excellent waste management! This project demonstrates best practices with minimal material waste.',
-            'Good': 'Good waste management. The project is performing well with acceptable waste levels.',
-            'Average': 'Average waste levels. Consider implementing optimization strategies to improve efficiency.',
-            'Poor': 'Poor waste management. Immediate action needed to reduce waste and improve material control.',
-            'Very Poor': 'Very poor waste management. Critical review of processes required to address excessive waste.'
-        }
-        
-        # Map reliability levels to Bootstrap badge colors
-        reliability_badge_color = {
-            'high': 'success',    # Green - high confidence
-            'medium': 'warning',  # Yellow - medium confidence
-            'low': 'danger'       # Red - low confidence
-        }[reliability['reliability_level']]
-        
-        # ====================================================================
-        # RENDER RESULTS TEMPLATE
-        # ====================================================================
-        # Pass all calculated data to template for display
-        return render_template('predict.html',
-                             project_id=data['project_id'],
-                             predicted_waste=f'{prediction:.2f}',
-                             category=category,
-                             category_color=category_color,
-                             interpretation=interpretations[category],
-                             reliability_level=reliability['reliability_level'].upper(),
-                             reliability_color=reliability_badge_color,
-                             reliability_message=reliability['message'],
-                             reliability_score=f"{reliability['reliability_score']:.0%}",
-                             waste_cost=f"${cost_co2['waste_cost_usd']:,.0f}",
-                             waste_co2=f"{cost_co2['waste_co2_kg']:,.0f}",
-                             potential_savings_cost=f"${cost_co2['potential_cost_savings_usd']:,.0f}",
-                             potential_co2_reduction=f"{cost_co2['potential_co2_reduction_kg']:,.0f}",
-                             total_steel_kg=f"{cost_co2['total_steel_kg']:,.0f}",
-                             waste_kg=f"{cost_co2['waste_kg']:,.0f}",
-                             explainability_features=format_explainability_features(explanation),
-                             explainability_method=explanation['method'],
-                             form_data=data)
-        
+
     except Exception as e:
-        # ====================================================================
-        # ERROR HANDLING
-        # ====================================================================
-        # If any error occurs during prediction, display error message
-        # while keeping the form accessible for retry
-        return render_template('predict.html',
-                             project_id=str(np.random.randint(1000, 9999)),  # Random project ID
-                             predicted_waste='',  # No prediction value
-                             category='',
-                             category_color='danger',  # Red to indicate error
-                             interpretation=f'Error: {str(e)}',  # Error message
-                             reliability_level='',
-                             reliability_color='secondary',
-                             reliability_message='',
-                             reliability_score='',
-                             waste_cost='$0',
-                             waste_co2='0',
-                             potential_savings_cost='$0',
-                             potential_co2_reduction='0',
-                             total_steel_kg='100,000',
-                             waste_kg='0',
-                             explainability_features=f'<div class="alert alert-danger">Error: {str(e)}</div>',
-                             explainability_method='N/A')
+        err_ctx = _empty_predict_template_vars()
+        err_ctx['prediction_error'] = str(e)
+        return render_template(
+            'predict.html',
+            project_id=str(np.random.randint(1000, 9999)),
+            **err_ctx,
+        )
 
 @app.route('/about')
 def about():
@@ -476,38 +735,30 @@ def api_predict():
         400: Bad Request (invalid data or error occurred)
     """
     try:
-        # Load model
         comparator = load_model()
-        
-        # Get JSON data from request body
-        data = request.get_json()
-        
-        # Convert to DataFrame for model prediction
-        df = pd.DataFrame([data])
-        
-        # Make prediction
-        prediction = comparator.predict(df)[0]
-        
-        # Get category (ignore color for API response)
-        category, _ = get_waste_category(prediction)
-        
-        # Calculate all additional features
-        explanation = comparator.explain_prediction(df, top_n=5)
-        reliability = comparator.calculate_reliability(df)
-        total_steel_kg = float(data.get('total_steel_kg', 100000))
-        cost_co2 = comparator.calculate_cost_co2_impact(prediction, total_steel_kg=total_steel_kg)
-        
-        # Return structured JSON response
-        return jsonify({
-            'success': True,
-            'predicted_waste_percentage': round(prediction, 2),
-            'waste_category': category,
-            'reliability': reliability,
-            'explainability': explanation,
-            'cost_co2_impact': cost_co2
-        })
+        payload = request.get_json(silent=True) or {}
+        if not isinstance(payload, dict):
+            return jsonify({'success': False, 'error': 'JSON object required'}), 400
+
+        total_steel_kg = float(payload.pop('total_steel_kg', 100000))
+        row = dict(payload)
+        if 'project_id' not in row or row['project_id'] is None:
+            row['project_id'] = 'P' + str(np.random.randint(1000, 9999))
+
+        missing = sorted(k for k in API_PREDICT_FEATURE_KEYS if k not in row)
+        if missing:
+            return jsonify({
+                'success': False,
+                'error': (
+                    'Missing required project fields: '
+                    + ', '.join(missing)
+                    + '. Send all model parameters as JSON (see /api/predict docstring).'
+                ),
+            }), 400
+
+        bundle = build_prediction_bundle(comparator, row, total_steel_kg)
+        return jsonify(_json_api_response(bundle))
     except Exception as e:
-        # Return error response
         return jsonify({
             'success': False,
             'error': str(e)
@@ -582,15 +833,19 @@ if __name__ == '__main__':
     print("Press Ctrl+C to stop")
     print("=" * 60)
     
-    # Check if model exists before starting server
+    # Ensure model exists before starting server (train if missing)
     model_path = 'models/best_steel_waste_model.pkl'
     if not os.path.exists(model_path):
-        print(f"\n⚠️  Warning: Model not found at {model_path}")
-        print("Please run 'python model.py' first to train the model.\n")
+        try:
+            train_model_if_needed(model_path)
+        except FileNotFoundError as e:
+            print(f"\n⚠️  {e}\n")
+    else:
+        print(f"\n✓ Model found at {model_path}\n")
     
     # Start Flask development server
     # debug=True: Enables auto-reload on code changes and detailed error pages
     # host='0.0.0.0': Makes server accessible from any network interface
     # port=5005: Custom port (default Flask port is 5000)
     # use_reloader=False: Disables auto-reloader (prevents double-loading of model)
-    app.run(debug=True, host='0.0.0.0', port=5005, use_reloader=False)
+    app.run(debug=True, host='0.0.0.0', port=5006, use_reloader=False)

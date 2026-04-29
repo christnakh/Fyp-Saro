@@ -11,7 +11,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="has-cursor-dock">
+<body class="has-cursor-dock" data-predict-url="{{ url_for('predict_page') }}">
     <!-- Custom Cursor -->
     <div class="cursor" id="cursor"></div>
     <div class="cursor-follower" id="cursorFollower"></div>
@@ -40,6 +40,11 @@
     <main>
         {% block content %}{% endblock %}
     </main>
+
+    <div id="toastStack" class="toast-stack" aria-live="polite" aria-relevant="additions"></div>
+    <button type="button" id="backToTop" class="back-to-top" aria-label="Back to top" title="Back to top" hidden>
+        <i class="bi bi-arrow-up" aria-hidden="true"></i>
+    </button>
 
     <!-- Footer -->
     <footer class="footer">

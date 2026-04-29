@@ -1,23 +1,13 @@
 <!--
-    Prediction Page Template
-    ========================
-    
-    This template provides the main prediction interface where users input
-    project parameters and receive waste predictions. It includes:
-    - Comprehensive input form with 16 project parameters
-    - Results display section (shown after prediction)
-    - Explainability features display
-    - Reliability indicators
-    - Cost and CO2 impact calculations
-    
-    The form uses HTML5 validation and submits via POST to /predict route.
-    
-    Author: FYP Team G09
-    Date: 2026
+    Prediction Page — form, gauge (p10 / expected / p90), SHAP split, scenario sliders.
 -->
 {% extends "base.html" %}
 
 {% block title %}Make Prediction - Steel Waste Prediction System{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/predict-results.css') }}">
+{% endblock %}
 
 {% block content %}
 <section class="section" style="padding-top: calc(var(--nav-h) + 2rem);">
@@ -32,23 +22,16 @@
                     <h1 class="section-title" style="margin-bottom: 0.5rem;">Steel Waste Prediction</h1>
                     <p class="section-desc" style="margin: 0;">Enter your project parameters to predict steel waste percentage</p>
                 </div>
+
+                {% if prediction_error %}
+                <div class="alert alert-danger mb-3" role="alert">
+                    <strong>Error:</strong> {{ prediction_error }}
+                </div>
+                {% endif %}
             
                 <div class="card glass-card">
                     <div class="card-body">
-                    <!-- 
-                        Form attributes:
-                        - id="predictionForm": Used by JavaScript for AJAX submission
-                        - method="POST": Sends data to server
-                        - action="{{ url_for('predict') }}": Flask route for processing
-                        - class="needs-validation": Enables Bootstrap validation styling
-                        - novalidate: Disables browser default validation (we use Bootstrap)
-                    -->
-                    <form id="predictionForm" method="POST" action="{{ url_for('predict') }}" class="needs-validation" novalidate>
-                        <!-- ====================================================
-                             SECTION 1: PROJECT INFORMATION
-                             ====================================================
-                             Basic project identification and phase information.
-                        -->
+                    <form id="predictionForm" method="POST" action="{{ url_for('predict') }}" class="needs-validation predict-form" novalidate>
                         <div class="form-section">
                             <h5 class="section-title-form"><i class="bi bi-info-circle"></i> Project Information</h5>
                             <div class="row">
@@ -68,20 +51,19 @@
                             </div>
                         </div>
                         
-                        <!-- Material Parameters -->
                         <div class="form-section">
                             <h5 class="section-title-form"><i class="bi bi-box-seam"></i> Material Parameters</h5>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Reinforcement Ratio (kg/m³)</label>
                                     <input type="number" class="form-control" name="reinforcement_ratio" 
-                                           value="120" min="60" max="180" step="0.1" required>
+                                           value="{% if form_data %}{{ form_data.reinforcement_ratio_kg_per_m3 }}{% else %}120{% endif %}" min="60" max="180" step="0.1" required>
                                     <small class="text-muted">Range: 60-180 kg/m³</small>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Number of Unique Required Lengths</label>
                                     <input type="number" class="form-control" name="num_unique_lengths" 
-                                           value="20" min="5" max="40" required>
+                                           value="{% if form_data %}{{ form_data.num_unique_required_lengths }}{% else %}20{% endif %}" min="5" max="40" required>
                                     <small class="text-muted">Range: 5-40</small>
                                 </div>
                             </div>
@@ -89,83 +71,81 @@
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Stock Length Policy</label>
                                     <select class="form-select" name="stock_length_policy" required>
-                                        <option value="standard_12m" selected>Standard 12m</option>
-                                        <option value="mixed_lengths">Mixed Lengths</option>
-                                        <option value="custom_lengths">Custom Lengths</option>
+                                        <option value="standard_12m" {% if not form_data or form_data.stock_length_policy == 'standard_12m' %}selected{% endif %}>Standard 12m</option>
+                                        <option value="mixed_lengths" {% if form_data and form_data.stock_length_policy == 'mixed_lengths' %}selected{% endif %}>Mixed Lengths</option>
+                                        <option value="custom_lengths" {% if form_data and form_data.stock_length_policy == 'custom_lengths' %}selected{% endif %}>Custom Lengths</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Cutting Optimization Usage</label>
                                     <select class="form-select" name="cutting_optimization" required>
-                                        <option value="0" selected>None (0)</option>
-                                        <option value="1">Basic (1)</option>
-                                        <option value="2">Advanced (2)</option>
+                                        <option value="0" {% if not form_data or form_data.cutting_optimization_usage == 0 %}selected{% endif %}>None (0)</option>
+                                        <option value="1" {% if form_data and form_data.cutting_optimization_usage == 1 %}selected{% endif %}>Basic (1)</option>
+                                        <option value="2" {% if form_data and form_data.cutting_optimization_usage == 2 %}selected{% endif %}>Advanced (2)</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Management & Control -->
                         <div class="form-section">
                             <h5 class="section-title-form"><i class="bi bi-shield-check"></i> Management & Control</h5>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Supervision Index (1-5)</label>
                                     <input type="number" class="form-control" name="supervision_index" 
-                                           value="3" min="1" max="5" required>
+                                           value="{% if form_data %}{{ form_data.supervision_index_1to5 }}{% else %}3{% endif %}" min="1" max="5" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Material Control Level (1-3)</label>
                                     <input type="number" class="form-control" name="material_control" 
-                                           value="2" min="1" max="3" required>
+                                           value="{% if form_data %}{{ form_data.material_control_level_1to3 }}{% else %}2{% endif %}" min="1" max="3" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Storage Handling Index (1-5)</label>
                                     <input type="number" class="form-control" name="storage_handling" 
-                                           value="3" min="1" max="5" required>
+                                           value="{% if form_data %}{{ form_data.storage_handling_index_1to5 }}{% else %}3{% endif %}" min="1" max="5" required>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">BIM Integration Level (0-3)</label>
                                     <select class="form-select" name="bim_integration" required>
-                                        <option value="0" selected>None (0)</option>
-                                        <option value="1">Level 1</option>
-                                        <option value="2">Level 2</option>
-                                        <option value="3">Level 3</option>
+                                        <option value="0" {% if not form_data or form_data.bim_integration_level == 0 %}selected{% endif %}>None (0)</option>
+                                        <option value="1" {% if form_data and form_data.bim_integration_level == 1 %}selected{% endif %}>Level 1</option>
+                                        <option value="2" {% if form_data and form_data.bim_integration_level == 2 %}selected{% endif %}>Level 2</option>
+                                        <option value="3" {% if form_data and form_data.bim_integration_level == 3 %}selected{% endif %}>Level 3</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Offcut Reuse Policy (0-2)</label>
                                     <select class="form-select" name="offcut_reuse" required>
-                                        <option value="0" selected>None (0)</option>
-                                        <option value="1">Basic (1)</option>
-                                        <option value="2">Advanced (2)</option>
+                                        <option value="0" {% if not form_data or form_data.offcut_reuse_policy_0to2 == 0 %}selected{% endif %}>None (0)</option>
+                                        <option value="1" {% if form_data and form_data.offcut_reuse_policy_0to2 == 1 %}selected{% endif %}>Basic (1)</option>
+                                        <option value="2" {% if form_data and form_data.offcut_reuse_policy_0to2 == 2 %}selected{% endif %}>Advanced (2)</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Project Dynamics -->
                         <div class="form-section">
                             <h5 class="section-title-form"><i class="bi bi-graph-up"></i> Project Dynamics</h5>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Design Revisions per Month</label>
                                     <input type="number" class="form-control" name="design_revisions" 
-                                           value="2" min="0" max="6" required>
+                                           value="{% if form_data %}{{ form_data.design_revisions_per_month }}{% else %}2{% endif %}" min="0" max="6" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Change Orders per Month</label>
                                     <input type="number" class="form-control" name="change_orders" 
-                                           value="1" min="0" max="5" required>
+                                           value="{% if form_data %}{{ form_data.change_orders_per_month }}{% else %}1{% endif %}" min="0" max="5" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Contract Type</label>
                                     <select class="form-select" name="contract_type" required>
-                                        <option value="lump_sum" selected>Lump Sum</option>
-                                        <option value="design_build">Design Build</option>
-                                        <option value="remeasurement">Remeasurement</option>
+                                        <option value="lump_sum" {% if not form_data or form_data.contract_type == 'lump_sum' %}selected{% endif %}>Lump Sum</option>
+                                        <option value="design_build" {% if form_data and form_data.contract_type == 'design_build' %}selected{% endif %}>Design Build</option>
+                                        <option value="remeasurement" {% if form_data and form_data.contract_type == 'remeasurement' %}selected{% endif %}>Remeasurement</option>
                                     </select>
                                 </div>
                             </div>
@@ -173,71 +153,176 @@
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Lead Time (days)</label>
                                     <input type="number" class="form-control" name="lead_time" 
-                                           value="15" min="3" max="30" required>
+                                           value="{% if form_data %}{{ form_data.lead_time_days }}{% else %}15{% endif %}" min="3" max="30" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Order Frequency per Month</label>
                                     <input type="number" class="form-control" name="order_frequency" 
-                                           value="4" min="1" max="8" required>
+                                           value="{% if form_data %}{{ form_data.order_frequency_per_month }}{% else %}4{% endif %}" min="1" max="8" required>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-12 mb-3">
                                     <label class="form-label">Total Steel Quantity (kg)</label>
-                                    <input type="number" class="form-control" name="total_steel_kg" 
-                                           value="100000" min="1000" step="1000" required>
+                                    <input type="number" class="form-control" name="total_steel_kg" id="inputTotalSteelKg"
+                                           value="{% if form_data and form_data.total_steel_kg is defined %}{{ form_data.total_steel_kg }}{% else %}100000{% endif %}" min="1000" step="1000" required>
                                     <small class="text-muted">Used for cost and CO₂ impact calculations</small>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Submit Button -->
                         <div class="text-center mt-4">
-                            <button type="submit" class="btn-predict btn-lg">
-                                <i class="bi bi-calculator"></i> Predict Steel Waste
+                            <button type="submit" class="btn-predict btn-lg" id="btnPredictSubmit">
+                                <span class="btn-predict-label"><i class="bi bi-calculator"></i> Predict Steel Waste</span>
+                                <span class="btn-predict-spinner" aria-hidden="true"><span class="pred-submit-spinner"></span> Running model…</span>
                             </button>
                         </div>
                     </form>
 
-                    <div class="loading" id="loading" style="display: none;">
+                    <div class="loading loading--panel" id="loading" style="display: none;" aria-hidden="true">
+                        <div class="loading-shimmer" aria-hidden="true"></div>
                         <div class="spinner-border" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
-                        <p>Processing prediction...</p>
+                        <p>Processing prediction…</p>
+                        <p class="loading-hint small text-muted">SHAP and reliability scores are computed on the server.</p>
                     </div>
                 </div>
             </div>
 
-            <div class="card glass-card result-card" id="resultCard" style="display: none;">
+            <div class="card glass-card result-card" id="resultCard" data-result-card {% if has_prediction %}style="display: block;"{% else %}style="display: none;"{% endif %}>
                 <div class="card-body">
                     <h4 class="card-title mb-4"><i class="bi bi-graph-up-arrow"></i> Prediction Results</h4>
-                    
-                    <div class="text-center mb-4">
-                        <h5 class="mb-3">Predicted Steel Waste</h5>
-                        <div class="waste-badge bg-{{ category_color }} text-white d-inline-block" id="wasteBadge">
-                            {{ predicted_waste }}%
+
+                    {% if has_prediction %}
+                    <div class="prediction-gauge-block mb-4">
+                        <h5 class="mb-3 text-center">Predicted steel waste</h5>
+                        <p class="text-center small text-muted mb-2">Gauge: <span class="gauge-legend-low">low</span> waste (green) → <span class="gauge-legend-high">high</span> waste (red)</p>
+                        <div class="waste-gauge-wrap" aria-hidden="true">
+                            <div class="waste-gauge-track">
+                                <div class="waste-gauge-gradient"></div>
+                                {% if intervals_available and gauge_p10_pct is not none %}
+                                <div class="waste-gauge-tick gauge-tick-p10" style="left: {{ '%.2f'|format(gauge_p10_pct) }}%;"></div>
+                                {% endif %}
+                                {% if intervals_available and gauge_p90_pct is not none %}
+                                <div class="waste-gauge-tick gauge-tick-p90" style="left: {{ '%.2f'|format(gauge_p90_pct) }}%;"></div>
+                                {% endif %}
+                                <div class="waste-gauge-marker" id="gaugeMarker" style="left: {{ '%.2f'|format(gauge_marker_pct) }}%;"></div>
+                            </div>
+                            <p class="text-center text-muted small mb-3" id="gaugeScaleCaption">Scale: {{ '%.1f'|format(gauge_lo) }}% → {{ '%.1f'|format(gauge_hi) }}% (neighbor-based uncertainty band)</p>
+                            <div class="waste-ml-triple" role="group" aria-label="Prediction and percentile band">
+                                <div class="waste-ml-col waste-ml-col--p10">
+                                    <span class="waste-ml-col-label">p10</span>
+                                    <span class="waste-ml-col-value" id="valP10">{% if intervals_available %}{{ p10_display }}<span class="pct-sym">%</span>{% else %}—{% endif %}</span>
+                                    <span class="waste-ml-col-hint">lower band</span>
+                                </div>
+                                <div class="waste-ml-col waste-ml-col--expected">
+                                    <span class="waste-ml-col-label">Expected (ML)</span>
+                                    <div class="expected-waste-value" id="valExpected">{{ predicted_waste }}<span class="pct-sym">%</span></div>
+                                </div>
+                                <div class="waste-ml-col waste-ml-col--p90">
+                                    <span class="waste-ml-col-label">p90</span>
+                                    <span class="waste-ml-col-value" id="valP90">{% if intervals_available %}{{ p90_display }}<span class="pct-sym">%</span>{% else %}—{% endif %}</span>
+                                    <span class="waste-ml-col-hint">upper band</span>
+                                </div>
+                            </div>
+                            <p class="text-center mb-2"><span class="badge bg-{{ category_color }}" id="categoryBadge">{{ category }}</span></p>
+                                {% if not intervals_available %}
+                                <p class="small text-warning mb-0 text-center">p10/p90 band unavailable for this model bundle (re-train and save the model with aligned training labels to enable).</p>
+                                {% endif %}
                         </div>
-                        <p class="mt-3 mb-0">
-                            <span class="badge bg-{{ category_color }}">{{ category }}</span>
-                        </p>
                     </div>
-                    
+
                     <div class="info-box">
                         <h6><i class="bi bi-info-circle"></i> Interpretation</h6>
-                        <p class="mb-0" id="interpretation">{{ interpretation }}</p>
+                        <p class="mb-0" id="interpretationText">{{ interpretation }}</p>
                     </div>
-                    
-                    <!-- Reliability Indicator -->
+
+                    <div class="mt-4">
+                        <h5 class="section-title-form"><i class="bi bi-lightbulb"></i> Top Waste-Driving Factors</h5>
+                        <p class="text-muted"><small>Based on {{ explainability_method }} analysis</small></p>
+
+                        {% if shap_split %}
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6">
+                                <div class="shap-panel shap-panel--drivers">
+                                    <h6 class="shap-panel-title"><i class="bi bi-arrow-up-circle"></i> Strongest upward drivers</h6>
+                                    <p class="small text-muted">These factors push estimated waste <strong>higher</strong> than the training baseline (SHAP &gt; 0).</p>
+                                    <ul class="list-unstyled shap-feature-list mb-0">
+                                        {% for f in positive_features %}
+                                        <li class="shap-feature-item">
+                                            <div class="shap-name-with-help">
+                                                <span class="shap-name">{{ f.display }}</span>
+                                                <button type="button" class="param-help-btn" title="{{ f.help }}" aria-label="Help: {{ f.display }}">?</button>
+                                            </div>
+                                            <span class="shap-chip shap-chip--bad">+{{ '%.4f'|format(f.contribution) }}</span>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="shap-panel shap-panel--benefits">
+                                    <h6 class="shap-panel-title"><i class="bi bi-arrow-down-circle"></i> Factors reducing waste</h6>
+                                    <p class="small text-muted">These factors pull estimated waste <strong>lower</strong> than the baseline (SHAP &lt; 0).</p>
+                                    <ul class="list-unstyled shap-feature-list mb-0">
+                                        {% for f in negative_features %}
+                                        <li class="shap-feature-item">
+                                            <div class="shap-name-with-help">
+                                                <span class="shap-name">{{ f.display }}</span>
+                                                <button type="button" class="param-help-btn" title="{{ f.help }}" aria-label="Help: {{ f.display }}">?</button>
+                                            </div>
+                                            <span class="shap-chip shap-chip--good">{{ '%.4f'|format(f.contribution) }}</span>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if scenario_json and scenario_json.scenarioFeatureKeys|length > 0 %}
+                        <div class="scenario-panel mt-3" id="scenarioPanel">
+                            <h6 class="section-title-form mb-2"><i class="bi bi-sliders"></i> Interactive levers (top factors above)</h6>
+                            <p class="small text-muted mb-2">Drag or change each control: the <strong>gauge</strong>, <strong>p10 / p90</strong>, and <strong>current waste cost / CO₂</strong> (in Financial &amp; Environmental Impact below) update in real time via the prediction API. <strong>Potential savings</strong> stay tied to the original SHAP counterfactual from your submitted run.</p>
+                            <p id="scenarioApiError" class="scenario-api-error" role="alert" hidden></p>
+                            <div id="scenarioControls"></div>
+                            <button type="button" class="btn-scenario-reset mt-3" id="btnScenarioReset"><i class="bi bi-arrow-counterclockwise"></i> Reset all levers to submitted values</button>
+                        </div>
+                        <script type="application/json" id="predictionScenarioData">{{ scenario_json|tojson }}</script>
+                        {% endif %}
+
+                        {% else %}
+                        <div class="alert alert-secondary mb-0">
+                            <small>Directional split (red vs green) requires <strong>SHAP</strong>. Showing global feature ranking instead.</small>
+                        </div>
+                        <div class="mt-2">{{ explainability_fallback_html|safe }}</div>
+                        {% endif %}
+                    </div>
+
                     <div class="info-box mt-3">
                         <h6><i class="bi bi-shield-check"></i> Prediction Reliability</h6>
-                        <div class="d-flex align-items-center">
-                            <span class="badge bg-{{ reliability_color }} me-2">{{ reliability_level }}</span>
-                            <span class="text-muted">{{ reliability_score }} confidence</span>
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <span class="badge bg-{{ reliability_color }} me-1" id="reliabilityBadge">{{ reliability_level }}</span>
+                            <span class="text-muted" id="reliabilityScoreText">{{ reliability_score }} similarity index</span>
                         </div>
-                        <p class="mb-0 mt-2"><small>{{ reliability_message }}</small></p>
+                        <p class="mb-2 mt-2"><small id="reliabilityMessage">{{ reliability_message }}</small></p>
+                        <div class="reliability-bands" role="list" aria-label="Reliability score ranges">
+                            <div class="reliability-band reliability-band--high{% if reliability_level == 'HIGH' %} reliability-band--active{% endif %}" role="listitem">
+                                <span class="reliability-band-title">High</span>
+                                <span class="reliability-band-range">score ≥ 0.70</span>
+                            </div>
+                            <div class="reliability-band reliability-band--medium{% if reliability_level == 'MEDIUM' %} reliability-band--active{% endif %}" role="listitem">
+                                <span class="reliability-band-title">Medium</span>
+                                <span class="reliability-band-range">0.40 – 0.69</span>
+                            </div>
+                            <div class="reliability-band reliability-band--low{% if reliability_level == 'LOW' %} reliability-band--active{% endif %}" role="listitem">
+                                <span class="reliability-band-title">Low</span>
+                                <span class="reliability-band-range">score &lt; 0.40</span>
+                            </div>
+                        </div>
+                        <p class="reliability-legend small text-muted mb-0 mt-2">The score is a <strong>0–1 similarity index</strong> vs. the synthetic training set (not a calibrated probability).</p>
                     </div>
-                    
-                    <!-- Cost and CO₂ Impact -->
+
                     <div class="mt-4">
                         <h5 class="section-title-form"><i class="bi bi-cash-coin"></i> Financial & Environmental Impact</h5>
                         <div class="row">
@@ -245,8 +330,9 @@
                                 <div class="card border-danger impact-card">
                                     <div class="card-body">
                                         <h6 class="card-title text-danger"><i class="bi bi-exclamation-triangle"></i> Waste Cost</h6>
-                                        <h4 class="text-danger">{{ waste_cost }}</h4>
-                                        <small class="text-muted">For {{ total_steel_kg }} kg steel ({{ waste_kg }} kg waste)</small>
+                                        <h4 class="text-danger" id="lineWasteCost">{{ waste_cost }}</h4>
+                                        <small class="text-muted">For <span id="lineTotalSteel">{{ total_steel_kg }}</span> kg steel (<span id="lineWasteKg">{{ waste_kg }}</span> kg waste)</small>
+                                        <div class="small text-muted mt-1">{{ unit_cost_label }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -254,8 +340,9 @@
                                 <div class="card border-warning impact-card">
                                     <div class="card-body">
                                         <h6 class="card-title text-warning"><i class="bi bi-cloud"></i> CO₂ Emissions</h6>
-                                        <h4 class="text-warning">{{ waste_co2 }} kg CO₂</h4>
+                                        <h4 class="text-warning" id="lineWasteCo2">{{ waste_co2 }} kg CO₂</h4>
                                         <small class="text-muted">From wasted steel</small>
+                                        <div class="small text-muted mt-1">{{ unit_co2_label }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -265,8 +352,9 @@
                                 <div class="card border-success impact-card">
                                     <div class="card-body">
                                         <h6 class="card-title text-success"><i class="bi bi-piggy-bank"></i> Potential Savings</h6>
-                                        <h4 class="text-success">{{ potential_savings_cost }}</h4>
-                                        <small class="text-muted">With 50% waste reduction</small>
+                                        <h4 class="text-success" id="linePotentialSave">{{ potential_savings_cost }}</h4>
+                                        <small class="text-muted" id="linePotentialSaveNote">{{ savings_subtext }}</small>
+                                        <div class="small text-muted mt-1">After literature review, set <code>STEEL_COST_PER_KG_USD</code> and <code>CO2_PER_KG_STEEL</code> in <code>config.py</code>.</div>
                                     </div>
                                 </div>
                             </div>
@@ -274,23 +362,16 @@
                                 <div class="card border-info impact-card">
                                     <div class="card-body">
                                         <h6 class="card-title text-info"><i class="bi bi-leaf"></i> CO₂ Reduction</h6>
-                                        <h4 class="text-info">{{ potential_co2_reduction }} kg CO₂</h4>
-                                        <small class="text-muted">Potential reduction</small>
+                                        <h4 class="text-info" id="linePotentialCo2">{% if potential_co2_reduction == 'N/A' %}N/A{% else %}{{ potential_co2_reduction }} kg CO₂{% endif %}</h4>
+                                        <small class="text-muted">Same scenario as potential savings</small>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <!-- Explainability -->
-                    <div class="mt-4">
-                        <h5 class="section-title-form"><i class="bi bi-lightbulb"></i> Top Waste-Driving Factors</h5>
-                        <p class="text-muted"><small>Based on {{ explainability_method }} analysis</small></p>
-                        <div class="alert alert-info mb-3">
-                            <small><i class="bi bi-info-circle"></i> <strong>Note:</strong> SHAP values show impact relative to training data baseline. Negative values mean "better than average" (reduces waste compared to baseline), positive values mean "worse than average" (increases waste compared to baseline).</small>
-                        </div>
-                        {{ explainability_features|safe }}
-                    </div>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">Submit the form to see your prediction here.</p>
+                    {% endif %}
                     
                     <div class="text-center mt-4">
                         <button type="button" class="btn-secondary" onclick="resetForm()">

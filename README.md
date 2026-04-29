@@ -676,10 +676,12 @@ For complete references, see the project proposal document.
 
 ## 🔗 Related Documents
 
-- **Project Proposal**: `CE_FYP_Revised_Proposal_G09.pdf`
+- **Technical appendix (full — report / examiner handover):** [`TECHNICAL_APPENDIX_FULL.md`](TECHNICAL_APPENDIX_FULL.md) — repository tree, `requirements.txt`, data pipeline, all model features, Flask routes, `/api/predict` JSON, `curl` example, saved-model bundle, reliability/SHAP/cost formulas at code level.
+- **Second-semester narrative:** [`SECOND_SEMESTER_ADDENDUM.md`](SECOND_SEMESTER_ADDENDUM.md) — proposal vs. implementation table and where to paste it in the written report.
+- **Project Proposal**: `CE_FYP_Revised_Proposal_G09.pdf` (if supplied)
 - **Data Dictionary**: `data/data_dictionary.xlsx`
 - **Model Results**: `data/model_comparison_results.csv`
-- **Code Documentation**: Inline comments in all source files
+- **Code Documentation**: Inline comments in `app.py`, `model.py`, and `data_generation/`
 
 ---
 

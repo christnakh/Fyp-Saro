@@ -1,0 +1,30 @@
+Proposal: Deployment and Enhancement of a Data-Driven Steel Waste Prediction System
+1. Introduction
+This proposal outlines the next development phase of the Final Year Project titled Data-Driven Prediction of Material Waste in Construction Projects Using Machine Learning. Building on the successfully developed machine learning models and preliminary web interface, the proposed extension focuses on deploying the system online and enhancing it with additional features that improve usability, transparency, and real-world applicability for construction professionals.
+2. Motivation for the Proposed Extension
+While the current project demonstrates strong predictive performance and a solid methodological framework, its impact can be significantly increased by transforming it into a fully deployable, industry-oriented decision-support tool. Hosting the application online and enriching it with interpretability, cost, and environmental impact features will: - Bridge the gap between academic research and industry practice - Increase confidence and trust in machine learning predictions - Enable real-time, scenario-based decision making for estimators and engineers
+3. Proposed Enhancements
+3.1 Online Deployment (Hosting)
+The existing web application will be deployed on a cloud-based hosting platform, allowing access through a public URL. This will enable users to interact with the prediction model without local setup requirements.
+Key outcomes: - Publicly accessible prediction tool - Demonstration of real-world usability - Improved project presentation and evaluation
+3.2 Model Explainability and Transparency
+To improve trust in the predictions, an explainability layer will be added. The system will display the most influential input parameters contributing to each prediction using feature-importance or SHAP-based explanations.
+Key outcomes: - Identification of top waste-driving factors per project - Improved interpretability of machine learning outputs - Alignment with engineering decision-making practices
+3.3 Scenario Analysis and Comparison Tool
+A scenario comparison feature will allow users to modify selected project parameters (e.g., supervision level, cutting optimization, BIM integration) and observe how predicted steel waste changes.
+Key outcomes: - “What-if” analysis capability - Support for proactive waste-reduction strategies - Practical value for tendering and planning stages
+3.4 Cost and CO₂ Impact Estimation
+The system will be extended to quantify the financial and environmental implications of predicted steel waste. By incorporating steel unit cost and embodied carbon factors, the application will estimate: - Additional steel cost due to waste - Potential cost savings from waste reduction - Associated CO₂ emissions and reductions
+Key outcomes: - Direct linkage between waste prediction and sustainability metrics - Reinforcement of environmental and economic significance
+3.5 Prediction Reliability Indicator
+A qualitative confidence indicator (high / medium / low) will be displayed alongside predictions, reflecting how representative the input data is relative to the training dataset.
+Key outcomes: - Improved engineering responsibility - Clear communication of prediction reliability
+4. Expected Deliverables
+•	Fully hosted and accessible web-based prediction tool
+•	Enhanced user interface with explainability and scenario analysis
+•	Integrated cost and CO₂ estimation module
+•	Documentation describing system architecture and usage
+5. Significance of the Proposed Work
+The proposed extension elevates the project from a predictive model to a deployable engineering support system. It demonstrates how machine learning can be responsibly and transparently integrated into construction practice, supporting more accurate material planning, cost control, and sustainability objectives.
+6. Conclusion
+This proposal presents a logical and valuable next step for the project, focusing on deployment, usability, and impact. The proposed enhancements are technically feasible within the project scope and significantly strengthen the project’s academic merit, practical relevance, and readiness for real-world adoption.

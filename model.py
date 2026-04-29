@@ -103,6 +103,9 @@ class ModelComparison:
         # Additional features for advanced functionality
         self.X_train_scaled = None  # Store scaled training data for reliability calculation
                                     # Used to compare new predictions with training data
+        self.y_train = None  # steel_waste_percentage per training row (aligned with X_train_scaled)
+        self.training_feature_defaults = None  # mean/mode per feature for counterfactual savings
+        self.training_feature_bounds = None  # min/max or categorical values for UI sliders
         self.shap_explainer = None  # SHAP explainer for model explainability
                                     # Initialized after best model is selected
         
@@ -187,6 +190,53 @@ class ModelComparison:
             X = self.scaler.transform(X)
         
         return X, y
+    
+    def _build_training_auxiliaries(self, train_df_raw: pd.DataFrame) -> None:
+        """
+        Per-feature training-set central tendency (for counterfactuals) and bounds (for UI).
+        Uses raw training rows (same column names as feature_columns).
+        """
+        if self.feature_columns is None:
+            return
+        defaults: Dict[str, object] = {}
+        bounds: Dict[str, Dict] = {}
+        categorical_cols = {'stock_length_policy', 'contract_type', 'project_phase'}
+        for col in self.feature_columns:
+            if col not in train_df_raw.columns:
+                continue
+            s = train_df_raw[col]
+            if col in categorical_cols:
+                mode_val = s.mode(dropna=True)
+                defaults[col] = mode_val.iloc[0] if len(mode_val) else s.iloc[0]
+                bounds[col] = {
+                    'type': 'categorical',
+                    'values': sorted(s.dropna().unique().tolist(), key=str)
+                }
+            else:
+                defaults[col] = float(np.mean(s.astype(float)))
+                bounds[col] = {
+                    'type': 'numeric',
+                    'min': float(s.min()),
+                    'max': float(s.max()),
+                    'p5': float(np.percentile(s.astype(float), 5)),
+                    'p95': float(np.percentile(s.astype(float), 95)),
+                }
+        self.training_feature_defaults = defaults
+        self.training_feature_bounds = bounds
+    
+    def _rebuild_training_aux_from_csv(self) -> None:
+        """Load training CSV to fill y_train (if aligned) and feature defaults/bounds."""
+        path = os.path.join('data', 'train_data.csv')
+        if not os.path.exists(path):
+            return
+        train_df = pd.read_csv(path)
+        self._build_training_auxiliaries(train_df)
+        if (
+            self.X_train_scaled is not None
+            and self.y_train is None
+            and len(train_df) == len(self.X_train_scaled)
+        ):
+            self.y_train = train_df['steel_waste_percentage'].astype(float).values
     
     def get_models(self) -> Dict[str, object]:
         """Define 10 different models to compare."""
@@ -385,6 +435,8 @@ class ModelComparison:
         
         # Store scaled training data for reliability calculation
         self.X_train_scaled = X_train.copy()
+        self.y_train = np.asarray(y_train, dtype=float).ravel()
+        self._build_training_auxiliaries(train_df)
         
         print(f"  ✓ Training set: {X_train.shape[0]:,} samples, {X_train.shape[1]} features")
         print(f"  ✓ Test set: {X_test.shape[0]:,} samples, {X_test.shape[1]} features")
@@ -543,6 +595,9 @@ class ModelComparison:
             'scaler': self.scaler,
             'feature_columns': self.feature_columns,
             'X_train_scaled': self.X_train_scaled,  # Store for reliability calculation
+            'y_train': self.y_train,
+            'training_feature_defaults': self.training_feature_defaults,
+            'training_feature_bounds': self.training_feature_bounds,
             'metadata': {
                 'created_at': datetime.now().isoformat(),
                 'cv_folds': self.cv_folds,
@@ -586,9 +641,24 @@ class ModelComparison:
                 train_df = pd.read_csv('data/train_data.csv')
                 X_train, _ = self.prepare_features(train_df, is_training=False)
                 self.X_train_scaled = X_train
-            except:
+            except Exception:
                 print("  ⚠ Training data not available. Reliability calculation may be limited.")
                 self.X_train_scaled = None
+        
+        self.y_train = model_data.get('y_train')
+        self.training_feature_defaults = model_data.get('training_feature_defaults')
+        self.training_feature_bounds = model_data.get('training_feature_bounds')
+        if self.training_feature_defaults is None or self.training_feature_bounds is None:
+            self._rebuild_training_aux_from_csv()
+        if self.y_train is None:
+            self._rebuild_training_aux_from_csv()
+        if (
+            self.y_train is not None
+            and self.X_train_scaled is not None
+            and len(self.y_train) != len(self.X_train_scaled)
+        ):
+            print("  ⚠ y_train length mismatch with X_train_scaled; prediction intervals disabled.")
+            self.y_train = None
         
         # Initialize SHAP explainer if available
         if SHAP_AVAILABLE and self.X_train_scaled is not None:
@@ -633,6 +703,44 @@ class ModelComparison:
         
         X, _ = self.prepare_features(df, is_training=False)
         return self.best_model.predict(X)
+    
+    def estimate_prediction_intervals(
+        self,
+        X: np.ndarray,
+        k_neighbors: int = 40,
+    ) -> Dict[str, object]:
+        """
+        Neighbor-based p10/p90 on steel_waste_percentage from training rows
+        nearest to the scaled input X (single row, shape (1, n_features)).
+        """
+        out: Dict[str, object] = {
+            'p10': None,
+            'p90': None,
+            'available': False,
+        }
+        if (
+            self.X_train_scaled is None
+            or self.y_train is None
+            or len(self.y_train) != len(self.X_train_scaled)
+        ):
+            return out
+        k = int(min(max(k_neighbors, 5), len(self.X_train_scaled)))
+        try:
+            nn = NearestNeighbors(n_neighbors=k, metric='euclidean')
+            nn.fit(self.X_train_scaled)
+            _, idx = nn.kneighbors(X)
+            ys = self.y_train[idx[0]]
+            out['p10'] = float(np.percentile(ys, 10))
+            out['p90'] = float(np.percentile(ys, 90))
+            out['available'] = True
+        except Exception:
+            pass
+        return out
+    
+    def prediction_intervals_for_row(self, df: pd.DataFrame) -> Dict[str, object]:
+        """p10/p90 from k-NN on scaled features for a single project row."""
+        X, _ = self.prepare_features(df, is_training=False)
+        return self.estimate_prediction_intervals(X)
     
     def explain_prediction(self, df: pd.DataFrame, top_n: int = 5) -> Dict:
         """
@@ -844,73 +952,105 @@ class ModelComparison:
             'normalized_distance': float(mean_normalized_distance)
         }
     
+    def calculate_counterfactual_potential(
+        self,
+        baseline_df: pd.DataFrame,
+        explanation: Dict,
+        total_steel_kg: float,
+        steel_cost_per_kg: float,
+        co2_per_kg_steel: float,
+    ) -> Dict:
+        """
+        Potential savings by moving the top three positive-SHAP drivers to
+        training-set central tendency (mean for numeric, mode for categorical).
+        """
+        empty = {
+            'available': False,
+            'message': 'Counterfactual savings require SHAP explanations.',
+            'baseline_waste_percentage': None,
+            'counterfactual_waste_percentage': None,
+            'delta_waste_percentage': None,
+            'potential_savings_kg': 0.0,
+            'potential_cost_savings_usd': 0.0,
+            'potential_co2_reduction_kg': 0.0,
+            'adjusted_features': [],
+        }
+        if explanation.get('method') != 'SHAP':
+            empty['message'] = 'Counterfactual savings require SHAP (not feature-importance fallback).'
+            return empty
+        if self.training_feature_defaults is None:
+            empty['message'] = 'Training defaults not loaded; re-save model or ensure data/train_data.csv exists.'
+            return empty
+        
+        all_features = explanation.get('all_features') or {}
+        positive = sorted(
+            [(k, v) for k, v in all_features.items() if v > 0],
+            key=lambda x: -x[1],
+        )[:3]
+        if not positive:
+            empty['message'] = 'No positive SHAP contributions to form a reduction scenario.'
+            return empty
+        
+        cf_df = baseline_df.copy()
+        adjusted = []
+        categorical_cols = {'stock_length_policy', 'contract_type', 'project_phase'}
+        for feat, _ in positive:
+            if feat not in self.training_feature_defaults:
+                continue
+            new_val = self.training_feature_defaults[feat]
+            old_val = cf_df.iloc[0].get(feat)
+            if feat in categorical_cols:
+                cf_df[feat] = new_val
+            else:
+                col_series = baseline_df[feat]
+                if pd.api.types.is_integer_dtype(col_series.dtype):
+                    cf_df[feat] = int(round(float(new_val)))
+                else:
+                    cf_df[feat] = float(new_val)
+            adjusted.append({'feature': feat, 'from': old_val, 'to': cf_df.iloc[0][feat]})
+        
+        pred_base = float(self.predict(baseline_df)[0])
+        pred_cf = float(self.predict(cf_df)[0])
+        delta_pct = max(0.0, pred_base - pred_cf)
+        delta_kg = (delta_pct / 100.0) * float(total_steel_kg)
+        
+        return {
+            'available': True,
+            'message': (
+                'Potential savings if the three strongest waste-increasing factors '
+                '(by SHAP) were brought to average levels seen in the synthetic training set.'
+            ),
+            'baseline_waste_percentage': pred_base,
+            'counterfactual_waste_percentage': pred_cf,
+            'delta_waste_percentage': delta_pct,
+            'potential_savings_kg': float(delta_kg),
+            'potential_cost_savings_usd': float(delta_kg * steel_cost_per_kg),
+            'potential_co2_reduction_kg': float(delta_kg * co2_per_kg_steel),
+            'adjusted_features': adjusted,
+        }
+    
     def calculate_cost_co2_impact(self, waste_percentage: float, 
                                    total_steel_kg: float = 100000,
                                    steel_cost_per_kg: float = 0.8,
                                    co2_per_kg_steel: float = 2.5) -> Dict:
         """
-        Calculate financial and environmental impact of steel waste.
+        Calculate financial and environmental impact of the predicted steel waste.
         
-        This method quantifies the real-world implications of predicted waste:
-        - Financial cost of wasted steel
-        - CO₂ emissions from wasted steel production
-        - Potential savings from waste reduction
-        
-        These metrics help stakeholders understand the business case for
-        waste reduction and make data-driven decisions.
+        Potential savings are computed separately via ``calculate_counterfactual_potential``.
         
         Args:
             waste_percentage: Predicted waste percentage (e.g., 6.5 for 6.5%)
             total_steel_kg: Total steel quantity in kg (default: 100,000 kg = 100 tons)
-            steel_cost_per_kg: Cost per kg of steel in USD (default: $0.8/kg)
-                - Based on Middle East market rates (2024-2025)
-            co2_per_kg_steel: CO₂ emissions per kg of steel in kg CO₂ (default: 2.5 kg CO₂/kg)
-                - Based on industry average for rebar production
-                - Includes production, transportation, and processing
+            steel_cost_per_kg: Cost per kg of steel in USD
+            co2_per_kg_steel: CO₂ emissions per kg of steel (kg CO₂ per kg steel)
         
         Returns:
-            Dictionary containing:
-            - 'waste_percentage': Original predicted waste percentage
-            - 'total_steel_kg': Total steel quantity
-            - 'waste_kg': Amount of steel wasted (in kg)
-            - 'waste_cost_usd': Financial cost of waste (in USD)
-            - 'waste_co2_kg': CO₂ emissions from waste (in kg CO₂)
-            - 'potential_savings_kg': Potential steel savings (in kg)
-            - 'potential_cost_savings_usd': Potential cost savings (in USD)
-            - 'potential_co2_reduction_kg': Potential CO₂ reduction (in kg CO₂)
-            - 'target_waste_percentage': Target waste percentage (50% reduction)
+            waste_percentage, total_steel_kg, waste_kg, waste_cost_usd, waste_co2_kg,
+            steel_cost_per_kg, co2_per_kg_steel
         """
-        # ====================================================================
-        # CALCULATE ACTUAL WASTE QUANTITIES
-        # ====================================================================
-        # Convert percentage to absolute quantity
         waste_kg = (waste_percentage / 100) * total_steel_kg
-        
-        # Calculate financial cost of waste
-        # Example: 6.5% of 100,000 kg = 6,500 kg × $0.8/kg = $5,200
         waste_cost = waste_kg * steel_cost_per_kg
-        
-        # Calculate CO₂ emissions from waste
-        # Steel production is carbon-intensive
-        # Example: 6,500 kg × 2.5 kg CO₂/kg = 16,250 kg CO₂
         waste_co2 = waste_kg * co2_per_kg_steel
-        
-        # ====================================================================
-        # CALCULATE POTENTIAL SAVINGS
-        # ====================================================================
-        # Assume 50% waste reduction is achievable with optimization
-        # This is a conservative estimate based on industry best practices
-        target_waste_percentage = waste_percentage * 0.5
-        
-        # Calculate potential savings in steel quantity
-        potential_savings_kg = (waste_percentage - target_waste_percentage) / 100 * total_steel_kg
-        
-        # Calculate potential cost savings
-        potential_cost_savings = potential_savings_kg * steel_cost_per_kg
-        
-        # Calculate potential CO₂ reduction
-        # Reducing waste directly reduces carbon footprint
-        potential_co2_reduction = potential_savings_kg * co2_per_kg_steel
         
         return {
             'waste_percentage': float(waste_percentage),
@@ -918,10 +1058,8 @@ class ModelComparison:
             'waste_kg': float(waste_kg),
             'waste_cost_usd': float(waste_cost),
             'waste_co2_kg': float(waste_co2),
-            'potential_savings_kg': float(potential_savings_kg),
-            'potential_cost_savings_usd': float(potential_cost_savings),
-            'potential_co2_reduction_kg': float(potential_co2_reduction),
-            'target_waste_percentage': float(target_waste_percentage)
+            'steel_cost_per_kg': float(steel_cost_per_kg),
+            'co2_per_kg_steel': float(co2_per_kg_steel),
         }
 
 
