@@ -1032,7 +1032,7 @@ class ModelComparison:
     def calculate_cost_co2_impact(self, waste_percentage: float, 
                                    total_steel_kg: float = 100000,
                                    steel_cost_per_kg: float = 0.8,
-                                   co2_per_kg_steel: float = 2.5) -> Dict:
+                                   co2_per_kg_steel: float = 0.5) -> Dict:
         """
         Calculate financial and environmental impact of the predicted steel waste.
         

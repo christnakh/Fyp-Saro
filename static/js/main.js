@@ -756,6 +756,17 @@ function initPredictionResults(resultCard) {
   buildControls();
 }
 
+/** SSR gauge ticks/marker use data-left-pct to avoid Jinja inside style="" (invalid for CSS tooling). */
+function initGaugePositionsFromData(root = document) {
+  root.querySelectorAll('[data-left-pct]').forEach((el) => {
+    const raw = el.getAttribute('data-left-pct');
+    if (raw == null || raw === '') return;
+    const n = parseFloat(raw);
+    if (!Number.isFinite(n)) return;
+    el.style.left = `${n}%`;
+  });
+}
+
 /* ─── INIT ───────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   initCursor();
@@ -767,6 +778,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initStatCounters();
   initNavPrefetch();
   initPredictionForm();
+  initGaugePositionsFromData();
   const rc = document.getElementById('resultCard');
   if (rc && rc.querySelector('#predictionScenarioData')) {
     initPredictionResults(rc);

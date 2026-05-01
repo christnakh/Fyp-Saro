@@ -186,11 +186,68 @@ FEATURE_DISPLAY_NAMES = {
     'project_phase': 'Project Phase',
 }
 
-# Placeholder copy until literature/definitions are provided
-PARAMETER_HELP_PLACEHOLDER = (
-    'Definition coming soon. This parameter will be described in a future update.'
-)
-PARAMETER_HELP = {k: PARAMETER_HELP_PLACEHOLDER for k in FEATURE_DISPLAY_NAMES}
+PARAMETER_HELP_FALLBACK = 'No detailed definition is configured for this parameter.'
+PARAMETER_HELP = {
+    'reinforcement_ratio_kg_per_m3': (
+        'The amount of steel used per cubic meter of concrete. On the form, typical range is 60–180 kg/m³.'
+    ),
+    'num_unique_required_lengths': (
+        'The number of different bar lengths needed in the project. On the form, typical range is 5–40.'
+    ),
+    'stock_length_policy': (
+        'The type of bar lengths purchased from suppliers (for example standard 12 m, mixed lengths, or custom).'
+    ),
+    'cutting_optimization_usage': (
+        'The level of optimization used when planning steel cutting (0–2). '
+        '0: No cutting optimization—bars are cut directly on site without a planned cutting layout. '
+        '1: Basic optimization—the team manually tries to arrange cuts to reduce leftovers. '
+        '2: Advanced or software-based optimization—specialized software generates cutting patterns.'
+    ),
+    'bim_integration_level': (
+        'Many briefs define BIM as 1–3 (1 = little or no BIM / mainly 2D; 3 = strong BIM with clash detection and rebar coordination). '
+        'The model uses 0–3: 0 is an extra minimal class in training; 1–3 increase from limited toward strong BIM and align with brief levels 1–3 for interpretation. '
+        '2: Moderate BIM—coordination beyond mainly 2D but not yet at full strong-BIM practice.'
+    ),
+    'design_revisions_per_month': (
+        'The number of design changes made in an average month.'
+    ),
+    'supervision_index_1to5': (
+        'A rating of site supervision quality (1–5). '
+        '1: Very weak site supervision—limited checking of cutting, placement, and material use on site. '
+        '5: Very strong and consistent supervision—regular inspections and close monitoring of steel work and wastage.'
+    ),
+    'material_control_level_1to3': (
+        'A measure of how well steel materials are tracked and managed (1–3). '
+        '1: Poor material tracking—steel is delivered and used with little recording or inventory follow-up. '
+        '3: Strong control—steel quantities are logged, monitored, and checked throughout the project.'
+    ),
+    'storage_handling_index_1to5': (
+        'A rating of how well steel is stored and handled on site (1–5). '
+        '1: Very poor practices—bars are left exposed, mixed randomly, or handled carelessly. '
+        '5: Very good practices—bars are stored neatly, protected, and moved in an organized way.'
+    ),
+    'offcut_reuse_policy_0to2': (
+        'A measure of how much leftover cut pieces are reused in the project (0–2). '
+        '0: Offcuts are not reused—leftover pieces are discarded after cutting. '
+        '1: Offcuts are reused occasionally or in a limited way—some leftovers are reused when workers notice a suitable use. '
+        '2: Offcuts are actively and systematically reused—leftovers are sorted, stored, and reused according to a clear process.'
+    ),
+    'change_orders_per_month': (
+        'The number of scope or drawing changes made in an average month.'
+    ),
+    'contract_type': (
+        'The contractual arrangement used in the project (for example lump sum, design-build, or remeasurement).'
+    ),
+    'lead_time_days': (
+        'The number of days between placing a steel order and receiving it.'
+    ),
+    'order_frequency_per_month': (
+        'The number of steel orders placed per month.'
+    ),
+    'project_phase': (
+        'The current stage of the project—for example foundation, frame, or slab/finishing.'
+    ),
+}
 
 
 def format_explainability_features(explanation):
@@ -316,7 +373,7 @@ def split_shap_driver_lists(explanation: dict):
             'feature': k,
             'contribution': v,
             'display': FEATURE_DISPLAY_NAMES.get(k, k.replace('_', ' ').title()),
-            'help': PARAMETER_HELP.get(k, PARAMETER_HELP_PLACEHOLDER),
+            'help': PARAMETER_HELP.get(k, PARAMETER_HELP_FALLBACK),
         }
 
     return [_row(k, v) for k, v in pos], [_row(k, v) for k, v in neg], True
@@ -391,7 +448,7 @@ def build_prediction_bundle(comparator: ModelComparison, row: dict, total_steel_
         'scenarioFeatureKeys': scenario_keys,
         'bounds': bounds,
         'displayNames': {k: FEATURE_DISPLAY_NAMES.get(k, k) for k in scenario_keys},
-        'helps': {k: PARAMETER_HELP.get(k, PARAMETER_HELP_PLACEHOLDER) for k in scenario_keys},
+        'helps': {k: PARAMETER_HELP.get(k, PARAMETER_HELP_FALLBACK) for k in scenario_keys},
     })
 
     gauge = _gauge_scale(prediction, p10, p90, intervals_ok)
@@ -539,7 +596,7 @@ def _json_api_response(bundle: dict) -> dict:
     for k in scenario_keys:
         if k not in unique_keys:
             unique_keys.append(k)
-    param_help = {k: PARAMETER_HELP.get(k, PARAMETER_HELP_PLACEHOLDER) for k in unique_keys}
+    param_help = {k: PARAMETER_HELP.get(k, PARAMETER_HELP_FALLBACK) for k in unique_keys}
 
     rel = bundle['reliability']
     rel_level = rel['reliability_level']

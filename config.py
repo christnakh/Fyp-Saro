@@ -12,4 +12,4 @@ No code changes elsewhere are required when you swap the numbers.
 STEEL_COST_PER_KG_USD = 0.8
 
 # kg CO₂e per kg of steel for wasted material (adjust from literature)
-CO2_PER_KG_STEEL = 2.5
+CO2_PER_KG_STEEL = 0.5
