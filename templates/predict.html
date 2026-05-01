@@ -46,7 +46,6 @@
                                     {{ field_label('inputProjectId', 'Project ID', 'A short label to identify this project in your records.') }}
                                     <input type="text" class="form-control" name="project_id" id="inputProjectId"
                                            value="{% if form_data %}{{ form_data.project_id }}{% else %}P{{ project_id }}{% endif %}" placeholder="P1000" required>
-                                    <p class="form-text small text-muted mb-0">A short label to identify this project in your records.</p>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     {{ field_label('inputProjectPhase', 'Project Phase', 'The current stage of the project. Examples: foundation stage, frame stage, or slab/finishing stage.') }}
@@ -55,7 +54,6 @@
                                         <option value="frame" {% if not form_data or form_data.project_phase == 'frame' %}selected{% endif %}>Frame</option>
                                         <option value="slab_finishing" {% if form_data and form_data.project_phase == 'slab_finishing' %}selected{% endif %}>Slab Finishing</option>
                                     </select>
-                                    <p class="form-text small text-muted mb-0">The current stage of the project—for example foundation, frame, or slab/finishing stage.</p>
                                 </div>
                             </div>
                         </div>
@@ -64,16 +62,14 @@
                             <h5 class="section-title-form"><i class="bi bi-box-seam"></i> Material Parameters</h5>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    {{ field_label('inputReinforcementRatio', 'Reinforcement ratio (kg/m³)', 'The amount of steel used per cubic meter of concrete.') }}
+                                    {{ field_label('inputReinforcementRatio', 'Reinforcement ratio (kg/m³)', 'The amount of steel used per cubic meter of concrete. On this form: 60–180 kg/m³.') }}
                                     <input type="number" class="form-control" name="reinforcement_ratio" id="inputReinforcementRatio"
                                            value="{% if form_data %}{{ form_data.reinforcement_ratio_kg_per_m3 }}{% else %}120{% endif %}" min="60" max="180" step="0.1" required>
-                                    <p class="form-text small text-muted mb-0">The amount of steel used per cubic meter of concrete. Range on this form: 60–180 kg/m³.</p>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    {{ field_label('inputNumUniqueLengths', 'Number of unique required lengths', 'The number of different bar lengths needed in the project.') }}
+                                    {{ field_label('inputNumUniqueLengths', 'Number of unique required lengths', 'The number of different bar lengths needed in the project. On this form: 5–40.') }}
                                     <input type="number" class="form-control" name="num_unique_lengths" id="inputNumUniqueLengths"
                                            value="{% if form_data %}{{ form_data.num_unique_required_lengths }}{% else %}20{% endif %}" min="5" max="40" required>
-                                    <p class="form-text small text-muted mb-0">The number of different bar lengths needed in the project. Range on this form: 5–40.</p>
                                 </div>
                             </div>
                             <div class="row">
@@ -84,7 +80,6 @@
                                         <option value="mixed_lengths" {% if form_data and form_data.stock_length_policy == 'mixed_lengths' %}selected{% endif %}>Mixed Lengths</option>
                                         <option value="custom_lengths" {% if form_data and form_data.stock_length_policy == 'custom_lengths' %}selected{% endif %}>Custom Lengths</option>
                                     </select>
-                                    <p class="form-text small text-muted mb-0">The type of bar lengths purchased from suppliers.</p>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     {{ field_label('inputCuttingOptimization', 'Cutting optimization usage (0 to 2)', 'The level of optimization used when planning steel cutting. 0: No cutting optimization—bars are cut directly on site without a planned cutting layout. 1: Basic cutting optimization—the team manually tries to arrange cuts to reduce leftovers. 2: Advanced or software-based cutting optimization—specialized software is used to generate cutting patterns.') }}
@@ -93,12 +88,6 @@
                                         <option value="1" {% if form_data and form_data.cutting_optimization_usage == 1 %}selected{% endif %}>Basic (1)</option>
                                         <option value="2" {% if form_data and form_data.cutting_optimization_usage == 2 %}selected{% endif %}>Advanced (2)</option>
                                     </select>
-                                    <p class="form-text small text-muted mb-1">The level of optimization used when planning steel cutting (0 to 2).</p>
-                                    <ul class="small text-muted mb-0 ps-3">
-                                        <li><strong>0:</strong> No cutting optimization is used—bars are cut directly on site without a planned cutting layout.</li>
-                                        <li><strong>1:</strong> Basic cutting optimization is used—the team manually tries to arrange cuts to reduce leftovers.</li>
-                                        <li><strong>2:</strong> Advanced or software-based cutting optimization is used—specialized software is used to generate cutting patterns.</li>
-                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -110,31 +99,16 @@
                                     {{ field_label('inputSupervisionIndex', 'Supervision index (1 to 5)', 'A rating of site supervision quality. 1: Very weak site supervision—limited checking of cutting, placement, and material use on site. 5: Very strong and consistent site supervision—regular inspections and close monitoring of steel work and wastage.') }}
                                     <input type="number" class="form-control" name="supervision_index" id="inputSupervisionIndex"
                                            value="{% if form_data %}{{ form_data.supervision_index_1to5 }}{% else %}3{% endif %}" min="1" max="5" required>
-                                    <p class="form-text small text-muted mb-1">A rating of site supervision quality.</p>
-                                    <ul class="small text-muted mb-0 ps-3">
-                                        <li><strong>1:</strong> Very weak site supervision—limited checking of cutting, placement, and material use on site.</li>
-                                        <li><strong>5:</strong> Very strong and consistent site supervision—regular inspections and close monitoring of steel work and wastage.</li>
-                                    </ul>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     {{ field_label('inputMaterialControl', 'Material control level (1 to 3)', 'A measure of how well steel materials are tracked and managed. 1: Poor material tracking and control—steel is delivered and used with little recording or inventory follow-up. 3: Strong and organized material tracking and control—steel quantities are logged, monitored, and checked throughout the project.') }}
                                     <input type="number" class="form-control" name="material_control" id="inputMaterialControl"
                                            value="{% if form_data %}{{ form_data.material_control_level_1to3 }}{% else %}2{% endif %}" min="1" max="3" required>
-                                    <p class="form-text small text-muted mb-1">A measure of how well steel materials are tracked and managed.</p>
-                                    <ul class="small text-muted mb-0 ps-3">
-                                        <li><strong>1:</strong> Poor material tracking and control—steel is delivered and used with little recording or inventory follow-up.</li>
-                                        <li><strong>3:</strong> Strong and organized material tracking and control—steel quantities are logged, monitored, and checked throughout the project.</li>
-                                    </ul>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     {{ field_label('inputStorageHandling', 'Storage handling index (1 to 5)', 'A rating of how well steel is stored and handled on site. 1: Very poor storage and handling practices—bars are left exposed, mixed randomly, or handled carelessly. 5: Very good storage and handling practices—bars are stored neatly, protected, and moved in an organized way.') }}
                                     <input type="number" class="form-control" name="storage_handling" id="inputStorageHandling"
                                            value="{% if form_data %}{{ form_data.storage_handling_index_1to5 }}{% else %}3{% endif %}" min="1" max="5" required>
-                                    <p class="form-text small text-muted mb-1">A rating of how well steel is stored and handled on site.</p>
-                                    <ul class="small text-muted mb-0 ps-3">
-                                        <li><strong>1:</strong> Very poor storage and handling practices—bars are left exposed, mixed randomly, or handled carelessly.</li>
-                                        <li><strong>5:</strong> Very good storage and handling practices—bars are stored neatly, protected, and moved in an organized way.</li>
-                                    </ul>
                                 </div>
                             </div>
                             <div class="row">
@@ -146,7 +120,6 @@
                                         <option value="2" {% if form_data and form_data.bim_integration_level == 2 %}selected{% endif %}>2 — Moderate BIM</option>
                                         <option value="3" {% if form_data and form_data.bim_integration_level == 3 %}selected{% endif %}>3 — Strong BIM (3D coordination, clash detection, rebar)</option>
                                     </select>
-                                    <p class="form-text small text-muted mb-1">The extent to which BIM is used in the project. <strong>1</strong>: little or no BIM (mainly 2D). <strong>3</strong>: strong BIM (clash detection, rebar coordination). The model uses <strong>0–3</strong>; <strong>0</strong> is “no BIM” for compatibility with the training data.</p>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     {{ field_label('inputOffcutReuse', 'Offcut reuse policy (0 to 2)', 'A measure of how much leftover cut pieces are reused in the project. 0: Offcuts are not reused—leftover pieces are discarded after cutting. 1: Offcuts are reused occasionally or in a limited way—some leftover bars are reused when workers notice a suitable use. 2: Offcuts are actively and systematically reused—leftover pieces are sorted, stored, and reused according to a clear process.') }}
@@ -155,12 +128,6 @@
                                         <option value="1" {% if form_data and form_data.offcut_reuse_policy_0to2 == 1 %}selected{% endif %}>Basic (1)</option>
                                         <option value="2" {% if form_data and form_data.offcut_reuse_policy_0to2 == 2 %}selected{% endif %}>Advanced (2)</option>
                                     </select>
-                                    <p class="form-text small text-muted mb-1">A measure of how much leftover cut pieces are reused in the project (0 to 2).</p>
-                                    <ul class="small text-muted mb-0 ps-3">
-                                        <li><strong>0:</strong> Offcuts are not reused—leftover pieces are discarded after cutting.</li>
-                                        <li><strong>1:</strong> Offcuts are reused occasionally or in a limited way—some leftover bars are reused when workers notice a suitable use.</li>
-                                        <li><strong>2:</strong> Offcuts are actively and systematically reused—leftover pieces are sorted, stored, and reused according to a clear process.</li>
-                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -172,13 +139,11 @@
                                     {{ field_label('inputDesignRevisions', 'Design revisions per month', 'The number of design changes made in an average month.') }}
                                     <input type="number" class="form-control" name="design_revisions" id="inputDesignRevisions"
                                            value="{% if form_data %}{{ form_data.design_revisions_per_month }}{% else %}2{% endif %}" min="0" max="6" required>
-                                    <p class="form-text small text-muted mb-0">The number of design changes made in an average month.</p>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     {{ field_label('inputChangeOrders', 'Change orders per month', 'The number of scope or drawing changes made in an average month.') }}
                                     <input type="number" class="form-control" name="change_orders" id="inputChangeOrders"
                                            value="{% if form_data %}{{ form_data.change_orders_per_month }}{% else %}1{% endif %}" min="0" max="5" required>
-                                    <p class="form-text small text-muted mb-0">The number of scope or drawing changes made in an average month.</p>
                                 </div>
                                 <div class="col-md-4 mb-3">
                                     {{ field_label('inputContractType', 'Contract type', 'The contractual arrangement used in the project.') }}
@@ -187,7 +152,6 @@
                                         <option value="design_build" {% if form_data and form_data.contract_type == 'design_build' %}selected{% endif %}>Design Build</option>
                                         <option value="remeasurement" {% if form_data and form_data.contract_type == 'remeasurement' %}selected{% endif %}>Remeasurement</option>
                                     </select>
-                                    <p class="form-text small text-muted mb-0">The contractual arrangement used in the project.</p>
                                 </div>
                             </div>
                             <div class="row">
@@ -195,13 +159,11 @@
                                     {{ field_label('inputLeadTime', 'Lead time (days)', 'The number of days between placing a steel order and receiving it.') }}
                                     <input type="number" class="form-control" name="lead_time" id="inputLeadTime"
                                            value="{% if form_data %}{{ form_data.lead_time_days }}{% else %}15{% endif %}" min="3" max="30" required>
-                                    <p class="form-text small text-muted mb-0">The number of days between placing a steel order and receiving it.</p>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     {{ field_label('inputOrderFrequency', 'Order frequency per month', 'The number of steel orders placed per month.') }}
                                     <input type="number" class="form-control" name="order_frequency" id="inputOrderFrequency"
                                            value="{% if form_data %}{{ form_data.order_frequency_per_month }}{% else %}4{% endif %}" min="1" max="8" required>
-                                    <p class="form-text small text-muted mb-0">The number of steel orders placed per month.</p>
                                 </div>
                             </div>
                             <div class="row">
@@ -209,7 +171,6 @@
                                     {{ field_label('inputTotalSteelKg', 'Total steel quantity (kg)', 'The total amount of steel in the project. Used together with the predicted waste percentage to estimate waste mass, cost, and CO₂ from wasted steel.') }}
                                     <input type="number" class="form-control" name="total_steel_kg" id="inputTotalSteelKg"
                                            value="{% if form_data and form_data.total_steel_kg is defined %}{{ form_data.total_steel_kg }}{% else %}100000{% endif %}" min="1000" step="1000" required>
-                                    <p class="form-text small text-muted mb-0">The total amount of steel in the project. Used for cost and CO₂ impact calculations (waste mass × unit factors).</p>
                                 </div>
                             </div>
                         </div>
