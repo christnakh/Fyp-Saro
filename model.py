@@ -1042,7 +1042,7 @@ class ModelComparison:
             waste_percentage: Predicted waste percentage (e.g., 6.5 for 6.5%)
             total_steel_kg: Total steel quantity in kg (default: 100,000 kg = 100 tons)
             steel_cost_per_kg: Cost per kg of steel in USD
-            co2_per_kg_steel: CO₂ emissions per kg of steel (kg CO₂ per kg steel)
+            co2_per_kg_steel: CO₂ emissions per kg of steel waste (kg CO₂ per kg steel waste; default 0.5)
         
         Returns:
             waste_percentage, total_steel_kg, waste_kg, waste_cost_usd, waste_co2_kg,

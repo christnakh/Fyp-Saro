@@ -309,3 +309,18 @@
   background: rgba(255, 255, 255, 0.1);
   border-color: rgba(255, 255, 255, 0.35);
 }
+
+/* Form labels + ? help (same control as SHAP param-help-btn) */
+.form-label-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.form-label-row .form-label {
+  margin-bottom: 0;
+  flex: 1;
+  min-width: 0;
+}

@@ -11,5 +11,5 @@ No code changes elsewhere are required when you swap the numbers.
 # USD per kg of steel attributable to wasted material (adjust from literature)
 STEEL_COST_PER_KG_USD = 0.8
 
-# kg CO₂e per kg of steel for wasted material (adjust from literature)
+# kg CO₂ per kg of steel waste (embodied carbon attributed to wasted rebar; literature default 0.5)
 CO2_PER_KG_STEEL = 0.5

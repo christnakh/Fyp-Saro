@@ -204,9 +204,10 @@ PARAMETER_HELP = {
         '2: Advanced or software-based optimization—specialized software generates cutting patterns.'
     ),
     'bim_integration_level': (
-        'Many briefs define BIM as 1–3 (1 = little or no BIM / mainly 2D; 3 = strong BIM with clash detection and rebar coordination). '
-        'The model uses 0–3: 0 is an extra minimal class in training; 1–3 increase from limited toward strong BIM and align with brief levels 1–3 for interpretation. '
-        '2: Moderate BIM—coordination beyond mainly 2D but not yet at full strong-BIM practice.'
+        'The extent to which BIM is used in the project. '
+        '1: Little or no BIM use—drawings are mainly coordinated through 2D plans. '
+        '3: Strong BIM use in coordination, planning, and detailing—a 3D BIM model is actively used for clash detection and rebar coordination. '
+        'The trained model uses 0–3: 0 means no BIM; 1–3 follow the progression above (2 is moderate between 1 and 3).'
     ),
     'design_revisions_per_month': (
         'The number of design changes made in an average month.'
@@ -528,7 +529,7 @@ def _template_vars_from_bundle(bundle, form_data):
         'total_steel_kg': f"{cost['total_steel_kg']:,.0f}",
         'waste_kg': f"{cost['waste_kg']:,.0f}",
         'unit_cost_label': f"${bundle['steel_cost_per_kg']:.2f}/kg steel (waste)",
-        'unit_co2_label': f"{bundle['co2_per_kg_steel']:.2f} kg CO₂/kg steel (waste)",
+        'unit_co2_label': f"{bundle['co2_per_kg_steel']:.2f} kg CO₂/kg steel waste",
         'savings_subtext': savings_subtext,
         'explainability_method': explanation['method'],
         'positive_features': bundle['positive_features'],
@@ -569,7 +570,7 @@ def _empty_predict_template_vars():
         'total_steel_kg': '100,000',
         'waste_kg': '0',
         'unit_cost_label': f'${STEEL_COST_PER_KG_USD:.2f}/kg steel (waste)',
-        'unit_co2_label': f'{CO2_PER_KG_STEEL:.2f} kg CO₂/kg steel (waste)',
+        'unit_co2_label': f'{CO2_PER_KG_STEEL:.2f} kg CO₂/kg steel waste',
         'savings_subtext': '',
         'explainability_method': 'Feature Importance',
         'positive_features': [],
