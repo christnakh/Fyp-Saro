@@ -10,24 +10,23 @@
 {% endblock %}
 
 {% block content %}
-{# Label + ? (native title tooltip, same pattern as SHAP results) #}
+{# Label + ? (structured help via data-help + floating tooltip in main.js) #}
 {% macro field_label(for_id, text, help) %}
 <div class="form-label-row">
     <label class="form-label" for="{{ for_id }}">{{ text }}</label>
-    <button type="button" class="param-help-btn" title="{{ help|e }}" aria-label="Help: {{ text|e }}">?</button>
+    <button type="button" class="param-help-btn" data-help="{{ help|e }}" aria-label="Help: {{ text|e }}">?</button>
 </div>
 {% endmacro %}
-<section class="section" style="padding-top: calc(var(--nav-h) + 2rem);">
-    <div class="container">
-        <div class="row" style="justify-content: center;">
-            <div class="col-lg-10">
-                <div class="section-header" style="margin-bottom: 2rem;">
+<section class="section predict-page" style="padding-top: calc(var(--nav-h) + 2rem);">
+    <div class="container predict-page-container">
+        <div class="predict-page-stack">
+                <div class="section-header predict-page-header">
                     <div class="section-label">
                         <span class="label-line"></span>
                         <span>PREDICTION</span>
                     </div>
-                    <h1 class="section-title" style="margin-bottom: 0.5rem;">Steel Waste Prediction</h1>
-                    <p class="section-desc" style="margin: 0;">Enter your project parameters to predict steel waste percentage</p>
+                    <h1 class="section-title predict-page-title">Steel Waste Prediction</h1>
+                    <p class="section-desc predict-page-desc">Enter your project parameters to predict steel waste percentage</p>
                 </div>
 
                 {% if prediction_error %}
@@ -38,7 +37,7 @@
             
                 <div class="card glass-card">
                     <div class="card-body">
-                    <form id="predictionForm" method="POST" action="{{ url_for('predict') }}" class="needs-validation predict-form" novalidate>
+                    <form id="predictionForm" method="POST" action="{{ url_for('predict') }}" class="needs-validation predict-form predict-form-card" novalidate>
                         <div class="form-section">
                             <h5 class="section-title-form"><i class="bi bi-info-circle"></i> Project Information</h5>
                             <div class="row">
@@ -62,12 +61,12 @@
                             <h5 class="section-title-form"><i class="bi bi-box-seam"></i> Material Parameters</h5>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    {{ field_label('inputReinforcementRatio', 'Reinforcement ratio (kg/m³)', 'The amount of steel used per cubic meter of concrete. On this form: 60–180 kg/m³.') }}
+                                    {{ field_label('inputReinforcementRatio', 'Reinforcement ratio (kg/m³)', 'The amount of steel used per cubic meter of concrete.\nOn this form: 60–180 kg/m³.') }}
                                     <input type="number" class="form-control" name="reinforcement_ratio" id="inputReinforcementRatio"
                                            value="{% if form_data %}{{ form_data.reinforcement_ratio_kg_per_m3 }}{% else %}120{% endif %}" min="60" max="180" step="0.1" required>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    {{ field_label('inputNumUniqueLengths', 'Number of unique required lengths', 'The number of different bar lengths needed in the project. On this form: 5–40.') }}
+                                    {{ field_label('inputNumUniqueLengths', 'Number of unique required lengths', 'The number of different bar lengths needed in the project.\nOn this form: 5–40.') }}
                                     <input type="number" class="form-control" name="num_unique_lengths" id="inputNumUniqueLengths"
                                            value="{% if form_data %}{{ form_data.num_unique_required_lengths }}{% else %}20{% endif %}" min="5" max="40" required>
                                 </div>
@@ -82,7 +81,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    {{ field_label('inputCuttingOptimization', 'Cutting optimization usage (0 to 2)', 'The level of optimization used when planning steel cutting. 0: No cutting optimization—bars are cut directly on site without a planned cutting layout. 1: Basic cutting optimization—the team manually tries to arrange cuts to reduce leftovers. 2: Advanced or software-based cutting optimization—specialized software is used to generate cutting patterns.') }}
+                                    {{ field_label('inputCuttingOptimization', 'Cutting optimization usage (0 to 2)', 'The level of optimization used when planning steel cutting (0–2).\n\n0 — No optimization: bars are cut on site without a planned cutting layout.\n1 — Basic: the team manually arranges cuts to reduce leftovers.\n2 — Advanced: specialized software generates cutting patterns.') }}
                                     <select class="form-select" name="cutting_optimization" id="inputCuttingOptimization" required>
                                         <option value="0" {% if not form_data or form_data.cutting_optimization_usage == 0 %}selected{% endif %}>None (0)</option>
                                         <option value="1" {% if form_data and form_data.cutting_optimization_usage == 1 %}selected{% endif %}>Basic (1)</option>
@@ -96,24 +95,24 @@
                             <h5 class="section-title-form"><i class="bi bi-shield-check"></i> Management & Control</h5>
                             <div class="row">
                                 <div class="col-md-4 mb-3">
-                                    {{ field_label('inputSupervisionIndex', 'Supervision index (1 to 5)', 'A rating of site supervision quality. 1: Very weak site supervision—limited checking of cutting, placement, and material use on site. 5: Very strong and consistent site supervision—regular inspections and close monitoring of steel work and wastage.') }}
+                                    {{ field_label('inputSupervisionIndex', 'Supervision index (1 to 5)', 'A rating of site supervision quality (1–5).\n\n1 — Very weak: limited checking of cutting, placement, and material use.\n5 — Very strong: regular inspections and close monitoring of steel work and wastage.') }}
                                     <input type="number" class="form-control" name="supervision_index" id="inputSupervisionIndex"
                                            value="{% if form_data %}{{ form_data.supervision_index_1to5 }}{% else %}3{% endif %}" min="1" max="5" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    {{ field_label('inputMaterialControl', 'Material control level (1 to 3)', 'A measure of how well steel materials are tracked and managed. 1: Poor material tracking and control—steel is delivered and used with little recording or inventory follow-up. 3: Strong and organized material tracking and control—steel quantities are logged, monitored, and checked throughout the project.') }}
+                                    {{ field_label('inputMaterialControl', 'Material control level (1 to 3)', 'How well steel materials are tracked and managed (1–3).\n\n1 — Poor: little recording or inventory follow-up.\n3 — Strong: quantities logged, monitored, and checked throughout the project.') }}
                                     <input type="number" class="form-control" name="material_control" id="inputMaterialControl"
                                            value="{% if form_data %}{{ form_data.material_control_level_1to3 }}{% else %}2{% endif %}" min="1" max="3" required>
                                 </div>
                                 <div class="col-md-4 mb-3">
-                                    {{ field_label('inputStorageHandling', 'Storage handling index (1 to 5)', 'A rating of how well steel is stored and handled on site. 1: Very poor storage and handling practices—bars are left exposed, mixed randomly, or handled carelessly. 5: Very good storage and handling practices—bars are stored neatly, protected, and moved in an organized way.') }}
+                                    {{ field_label('inputStorageHandling', 'Storage handling index (1 to 5)', 'How well steel is stored and handled on site (1–5).\n\n1 — Very poor: exposed, mixed randomly, or handled carelessly.\n5 — Very good: neat storage, protection, and organized movement.') }}
                                     <input type="number" class="form-control" name="storage_handling" id="inputStorageHandling"
                                            value="{% if form_data %}{{ form_data.storage_handling_index_1to5 }}{% else %}3{% endif %}" min="1" max="5" required>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    {{ field_label('inputBimIntegration', 'BIM integration level (1 to 3; 0 = none for model)', 'The extent to which BIM is used in the project. 1: Little or no BIM use—drawings are mainly coordinated through 2D plans. 3: Strong BIM use in coordination, planning, and detailing—a 3D BIM model is actively used for clash detection and rebar coordination. Level 2 is moderate between 1 and 3. Value 0 means no BIM and matches the trained model’s minimal bucket.') }}
+                                    {{ field_label('inputBimIntegration', 'BIM integration level (1 to 3; 0 = none for model)', 'The extent to which BIM is used in the project (model uses 0–3).\n\n0 — None: matches the trained model’s “no BIM” bucket.\n1 — Limited: coordination mainly through 2D plans.\n2 — Moderate: BIM used for parts of coordination and planning.\n3 — Strong: 3D BIM for clash detection, rebar coordination, and detailing.') }}
                                     <select class="form-select" name="bim_integration" id="inputBimIntegration" required>
                                         <option value="0" {% if not form_data or form_data.bim_integration_level == 0 %}selected{% endif %}>None (0)</option>
                                         <option value="1" {% if form_data and form_data.bim_integration_level == 1 %}selected{% endif %}>1 — Limited BIM</option>
@@ -122,7 +121,7 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
-                                    {{ field_label('inputOffcutReuse', 'Offcut reuse policy (0 to 2)', 'A measure of how much leftover cut pieces are reused in the project. 0: Offcuts are not reused—leftover pieces are discarded after cutting. 1: Offcuts are reused occasionally or in a limited way—some leftover bars are reused when workers notice a suitable use. 2: Offcuts are actively and systematically reused—leftover pieces are sorted, stored, and reused according to a clear process.') }}
+                                    {{ field_label('inputOffcutReuse', 'Offcut reuse policy (0 to 2)', 'How much leftover cut pieces are reused (0–2).\n\n0 — None: offcuts discarded after cutting.\n1 — Basic: occasional reuse when a suitable use is noticed.\n2 — Systematic: leftovers sorted, stored, and reused by a clear process.') }}
                                     <select class="form-select" name="offcut_reuse" id="inputOffcutReuse" required>
                                         <option value="0" {% if not form_data or form_data.offcut_reuse_policy_0to2 == 0 %}selected{% endif %}>None (0)</option>
                                         <option value="1" {% if form_data and form_data.offcut_reuse_policy_0to2 == 1 %}selected{% endif %}>Basic (1)</option>
@@ -257,7 +256,7 @@
                                         <li class="shap-feature-item">
                                             <div class="shap-name-with-help">
                                                 <span class="shap-name">{{ f.display }}</span>
-                                                <button type="button" class="param-help-btn" title="{{ f.help }}" aria-label="Help: {{ f.display }}">?</button>
+                                                <button type="button" class="param-help-btn" data-help="{{ f.help|e }}" aria-label="Help: {{ f.display|e }}">?</button>
                                             </div>
                                             <span class="shap-chip shap-chip--bad">+{{ '%.4f'|format(f.contribution) }}</span>
                                         </li>
@@ -274,7 +273,7 @@
                                         <li class="shap-feature-item">
                                             <div class="shap-name-with-help">
                                                 <span class="shap-name">{{ f.display }}</span>
-                                                <button type="button" class="param-help-btn" title="{{ f.help }}" aria-label="Help: {{ f.display }}">?</button>
+                                                <button type="button" class="param-help-btn" data-help="{{ f.help|e }}" aria-label="Help: {{ f.display|e }}">?</button>
                                             </div>
                                             <span class="shap-chip shap-chip--good">{{ '%.4f'|format(f.contribution) }}</span>
                                         </li>
@@ -383,7 +382,6 @@
                         </button>
                     </div>
                 </div>
-            </div>
             </div>
         </div>
     </div>

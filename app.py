@@ -189,49 +189,52 @@ FEATURE_DISPLAY_NAMES = {
 PARAMETER_HELP_FALLBACK = 'No detailed definition is configured for this parameter.'
 PARAMETER_HELP = {
     'reinforcement_ratio_kg_per_m3': (
-        'The amount of steel used per cubic meter of concrete. On the form, typical range is 60–180 kg/m³.'
+        'The amount of steel used per cubic meter of concrete.\n'
+        'On the form, typical range is 60–180 kg/m³.'
     ),
     'num_unique_required_lengths': (
-        'The number of different bar lengths needed in the project. On the form, typical range is 5–40.'
+        'The number of different bar lengths needed in the project.\n'
+        'On the form, typical range is 5–40.'
     ),
     'stock_length_policy': (
         'The type of bar lengths purchased from suppliers (for example standard 12 m, mixed lengths, or custom).'
     ),
     'cutting_optimization_usage': (
-        'The level of optimization used when planning steel cutting (0–2). '
-        '0: No cutting optimization—bars are cut directly on site without a planned cutting layout. '
-        '1: Basic optimization—the team manually tries to arrange cuts to reduce leftovers. '
-        '2: Advanced or software-based optimization—specialized software generates cutting patterns.'
+        'The level of optimization used when planning steel cutting (0–2).\n\n'
+        '0 — No optimization: bars are cut on site without a planned cutting layout.\n'
+        '1 — Basic: the team manually arranges cuts to reduce leftovers.\n'
+        '2 — Advanced: specialized software generates cutting patterns.'
     ),
     'bim_integration_level': (
-        'The extent to which BIM is used in the project. '
-        '1: Little or no BIM use—drawings are mainly coordinated through 2D plans. '
-        '3: Strong BIM use in coordination, planning, and detailing—a 3D BIM model is actively used for clash detection and rebar coordination. '
-        'The trained model uses 0–3: 0 means no BIM; 1–3 follow the progression above (2 is moderate between 1 and 3).'
+        'The extent to which BIM is used in the project (model uses 0–3).\n\n'
+        '0 — None: matches the trained model’s “no BIM” bucket.\n'
+        '1 — Limited: drawings coordinated mainly through 2D plans.\n'
+        '2 — Moderate: BIM used for parts of coordination and planning.\n'
+        '3 — Strong: 3D BIM for clash detection, rebar coordination, and detailing.'
     ),
     'design_revisions_per_month': (
         'The number of design changes made in an average month.'
     ),
     'supervision_index_1to5': (
-        'A rating of site supervision quality (1–5). '
-        '1: Very weak site supervision—limited checking of cutting, placement, and material use on site. '
-        '5: Very strong and consistent supervision—regular inspections and close monitoring of steel work and wastage.'
+        'A rating of site supervision quality (1–5).\n\n'
+        '1 — Very weak: limited checking of cutting, placement, and material use.\n'
+        '5 — Very strong: regular inspections and close monitoring of steel work and wastage.'
     ),
     'material_control_level_1to3': (
-        'A measure of how well steel materials are tracked and managed (1–3). '
-        '1: Poor material tracking—steel is delivered and used with little recording or inventory follow-up. '
-        '3: Strong control—steel quantities are logged, monitored, and checked throughout the project.'
+        'How well steel materials are tracked and managed (1–3).\n\n'
+        '1 — Poor: little recording or inventory follow-up.\n'
+        '3 — Strong: quantities logged, monitored, and checked throughout the project.'
     ),
     'storage_handling_index_1to5': (
-        'A rating of how well steel is stored and handled on site (1–5). '
-        '1: Very poor practices—bars are left exposed, mixed randomly, or handled carelessly. '
-        '5: Very good practices—bars are stored neatly, protected, and moved in an organized way.'
+        'How well steel is stored and handled on site (1–5).\n\n'
+        '1 — Very poor: exposed, mixed randomly, or handled carelessly.\n'
+        '5 — Very good: neat storage, protection, and organized movement.'
     ),
     'offcut_reuse_policy_0to2': (
-        'A measure of how much leftover cut pieces are reused in the project (0–2). '
-        '0: Offcuts are not reused—leftover pieces are discarded after cutting. '
-        '1: Offcuts are reused occasionally or in a limited way—some leftovers are reused when workers notice a suitable use. '
-        '2: Offcuts are actively and systematically reused—leftovers are sorted, stored, and reused according to a clear process.'
+        'How much leftover cut pieces are reused (0–2).\n\n'
+        '0 — None: offcuts discarded after cutting.\n'
+        '1 — Basic: occasional reuse when a suitable use is noticed.\n'
+        '2 — Systematic: leftovers sorted, stored, and reused by a clear process.'
     ),
     'change_orders_per_month': (
         'The number of scope or drawing changes made in an average month.'

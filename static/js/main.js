@@ -259,6 +259,122 @@ function initTiltCards() {
   });
 }
 
+/* ─── PARAM HELP (?): structured multi-line tooltips ───────────── */
+const PARAM_HELP_TIP_ID = 'paramHelpTooltip';
+
+function initParamHelpTooltips() {
+  if (document.body.dataset.paramHelpTipsInit === '1') return;
+  document.body.dataset.paramHelpTipsInit = '1';
+
+  let tipEl = document.getElementById(PARAM_HELP_TIP_ID);
+  if (!tipEl) {
+    tipEl = document.createElement('div');
+    tipEl.id = PARAM_HELP_TIP_ID;
+    tipEl.className = 'param-help-floating-tip';
+    tipEl.setAttribute('role', 'tooltip');
+    tipEl.hidden = true;
+    document.body.appendChild(tipEl);
+  }
+
+  let hideTimer = null;
+  let activeBtn = null;
+
+  const clearHideTimer = () => {
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+  };
+
+  const hideTip = () => {
+    clearHideTimer();
+    tipEl.classList.remove('is-visible');
+    tipEl.hidden = true;
+    tipEl.textContent = '';
+    activeBtn = null;
+  };
+
+  const scheduleHide = () => {
+    clearHideTimer();
+    hideTimer = setTimeout(hideTip, 180);
+  };
+
+  const positionTip = (btn) => {
+    const margin = 10;
+    const r = btn.getBoundingClientRect();
+    tipEl.style.maxWidth = `${Math.min(352, window.innerWidth - 2 * margin)}px`;
+    const tw = tipEl.offsetWidth || 280;
+    const th = tipEl.offsetHeight || 48;
+
+    let left = r.left;
+    let top = r.bottom + margin;
+    left = Math.max(margin, Math.min(left, window.innerWidth - tw - margin));
+    if (top + th > window.innerHeight - margin) {
+      top = Math.max(margin, r.top - th - margin);
+    }
+    tipEl.style.left = `${left}px`;
+    tipEl.style.top = `${top}px`;
+  };
+
+  const showTip = (btn) => {
+    const raw = btn.getAttribute('data-help') || btn.getAttribute('title') || '';
+    if (!raw.trim()) return;
+    clearHideTimer();
+    activeBtn = btn;
+    tipEl.textContent = raw;
+    tipEl.hidden = false;
+    requestAnimationFrame(() => {
+      positionTip(btn);
+      tipEl.classList.add('is-visible');
+    });
+  };
+
+  document.addEventListener('mouseover', (e) => {
+    const btn = e.target && e.target.closest && e.target.closest('.param-help-btn');
+    if (btn) showTip(btn);
+  });
+
+  document.addEventListener('mouseout', (e) => {
+    const rel = e.relatedTarget;
+    const btn = e.target && e.target.closest && e.target.closest('.param-help-btn');
+    if (btn) {
+      if (rel && (btn.contains(rel) || rel.closest(`#${PARAM_HELP_TIP_ID}`))) return;
+      scheduleHide();
+      return;
+    }
+    const fromTip = e.target && e.target.closest && e.target.closest(`#${PARAM_HELP_TIP_ID}`);
+    if (fromTip) {
+      if (rel && (fromTip.contains(rel) || rel.closest('.param-help-btn'))) return;
+      scheduleHide();
+    }
+  });
+
+  tipEl.addEventListener('pointerenter', clearHideTimer);
+  tipEl.addEventListener('pointerleave', scheduleHide);
+
+  document.addEventListener('focusin', (e) => {
+    const btn = e.target && e.target.closest && e.target.closest('.param-help-btn');
+    if (btn) showTip(btn);
+  });
+  document.addEventListener('focusout', (e) => {
+    const btn = e.target && e.target.closest && e.target.closest('.param-help-btn');
+    if (!btn) return;
+    setTimeout(() => {
+      const ae = document.activeElement;
+      if (ae && tipEl.contains(ae)) return;
+      if (ae === btn) return;
+      hideTip();
+    }, 0);
+  });
+
+  const reposition = () => {
+    if (!tipEl.classList.contains('is-visible') || !activeBtn) return;
+    positionTip(activeBtn);
+  };
+  window.addEventListener('scroll', reposition, true);
+  window.addEventListener('resize', reposition);
+}
+
 /* ─── PREDICTION FORM (AJAX) ───────────────────────────────────── */
 function initPredictionForm() {
   const form = document.getElementById('predictionForm');
@@ -542,7 +658,14 @@ function initPredictionResults(resultCard) {
       const row = document.createElement('div');
       row.className = 'scenario-row';
       const lab = document.createElement('label');
-      lab.innerHTML = `${display} <button type="button" class="param-help-btn" title="${help.replace(/"/g, '&quot;')}" aria-label="Help">?</button>`;
+      lab.appendChild(document.createTextNode(`${display} `));
+      const hb = document.createElement('button');
+      hb.type = 'button';
+      hb.className = 'param-help-btn';
+      if (help) hb.setAttribute('data-help', help);
+      hb.setAttribute('aria-label', 'Help');
+      hb.textContent = '?';
+      lab.appendChild(hb);
       row.appendChild(lab);
 
       if (b.type === 'categorical' && Array.isArray(b.values) && b.values.length) {
@@ -777,6 +900,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initBackToTop();
   initStatCounters();
   initNavPrefetch();
+  initParamHelpTooltips();
   initPredictionForm();
   initGaugePositionsFromData();
   const rc = document.getElementById('resultCard');
